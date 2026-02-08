@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SB 병원 - 외래 진료</title>
+    <link rel="stylesheet" href="../assets/css/common/design-tokens.css">
+    <link rel="stylesheet" href="../assets/css/common/common.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-inner">
+            <!-- 좌측: 로고/타이틀 -->
+            <h1 class="header-title">
+                <span class="header-title-highlight">SB</span> 정형외과
+            </h1>
+            
+            <!-- 우측: 액션 버튼들 -->
+            <div class="header-actions">
+                <!-- 홈 버튼 -->
+                <button class="header-icon-btn" aria-label="홈">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </button>
+                
+                <!-- 알림 버튼 (빨간 점 표시) -->
+                <button class="header-icon-btn" aria-label="알림">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-dot"></span>
+                </button>
+                
+                <!-- 프로필 -->
+                <div class="header-profile">
+                    <img src="https://placehold.co/36x36" alt="프로필" class="header-profile-img">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar - Vertical Navigation -->
+        <aside class="sidebar sidebar-vertical">
+            <nav class="sidebar-nav">
+                <!-- 상단 메뉴 -->
+                <div class="sidebar-nav-group">
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">대시보드</div>
+                    </a>
+
+                    <a href="#" class="sidebar-nav-item active">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">외래 진료</div>
+                    </a>
+
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">입원 진료</div>
+                    </a>
+
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">협진</div>
+                    </a>
+
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">환자 서류</div>
+                    </a>
+
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">나의 세트</div>
+                    </a>
+                </div>
+
+                <!-- 하단 메뉴 -->
+                <div class="sidebar-nav-group">
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">공지사항</div>
+                    </a>
+
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">일정</div>
+                    </a>
+
+                    <a href="#" class="sidebar-nav-item">
+                        <div class="sidebar-nav-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="sidebar-nav-label">메신저</div>
+                        <span class="notification-badge"></span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- 2단 분할 레이아웃 -->
+            <div class="grid grid-sidebar-lg grid-full-height">
+                <!-- 1번 영역 -->
+                <div class="content-area flex flex-col h-full overflow-hidden">
+                    <!--top-->
+                    <div class="box">
+                        <h2 class="box-title">외래</h2>
+                        <div class="form-group">
+                            <label class="form-label">환자 검색</label>
+                            <input type="text" class="input input-search" placeholder="검색어를 입력하세요">
+                        </div>
+                    </div>
+                    <hr class="section-divider" />
+                    <!--bottom-->
+                    <div class="box">
+                        <h2 class="box-title">전체 환자 목록</h2>
+                        <div class="tabs tabs-button mb-2" style="width: 100% !important;">
+                            <button class="tab active w-full" onclick="switchTab(event, 'tab1')">전체 <span class="text-sm">20</span></button>
+                            <button class="tab w-full" onclick="switchTab(event, 'tab2')">진료중 <span class="text-sm">10</span></button>
+                            <button class="tab w-full" onclick="switchTab(event, 'tab3')">진료대기 <span class="text-sm">6</span></button>
+                            <button class="tab w-full" onclick="switchTab(event, 'tab4')">대기 <span class="text-sm">4</span></button>
+                        </div>
+                    </div>
+
+                    <!-- 전제 환자 목록 스크롤 적용을 위해 따로 분리 -->
+                    <!-- tab content 적용해야 함 -->
+                    <div class="flex-1 overflow-auto" style="margin-right: -1rem;"> 
+                        <div class="card-group">
+
+                            <!-- 접수대기 -->
+                            <div class="card">
+                                <div class="card-header py-1 flex justify-between">
+                                    <h4 class="card-title text-sm">1215002</h4>
+                                    <div class="relative">
+                                        <div class="status-cash">접수대기</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex items-center">
+                                        <h3 class="text-base font-bold mb-1">김유정</h3>
+                                        <p class="description text-sm mb-1 ml-3">M / 30세 (950203)</p>
+                                    </div>
+                                    <span class="badge badge-default">건강보험</span>
+                                </div>
+                            </div>
+
+                            <!-- 진료중 -->
+                            <div class="card overflow-visible"> <!--환자호출 해야 할 때 overflow-visible 클래스 붙여야만 환자호출 button 출력-->
+                                <div class="card-header py-1 flex justify-between">
+                                    <h4 class="card-title text-sm">1215002</h4>
+                                    <div class="relative">
+                                        <div class="status-going">진료중</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex items-center">
+                                        <h3 class="text-base font-bold mb-1">김유정</h3>
+                                        <p class="description text-sm mb-1 ml-3">M / 30세 (950203)</p>
+                                    </div>
+                                    <span class="badge badge-default">건강보험</span>
+                                </div>
+                            </div>
+
+
+                            <!-- 진료 대기 -->
+                            <div class="card overflow-visible"> <!--환자호출 해야 할 때 overflow-visible 클래스 붙여야만 환자호출 button 출력-->
+                                <div class="card-header py-1 flex justify-between">
+                                    <h4 class="card-title text-sm">1215002</h4>
+                                    <div class="relative">
+                                        <div class="status-default" onclick="toggleDropdown(event, 'dropdown1')">진료대기</div>
+                                        <div class="dropdown-menu" id="dropdown1">
+                                            <a href="#" class="dropdown-item">
+                                                <span class="dropdown-item-text">환자 호출</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex items-center">
+                                        <h3 class="text-base font-bold mb-1">김유정</h3>
+                                        <p class="description text-sm mb-1 ml-3">M / 30세 (950203)</p>
+                                    </div>
+                                    <span class="badge badge-default">건강보험</span>
+                                </div>
+                            </div>
+
+                            <!-- 대기 -->
+                            <div class="card overflow-visible"> <!--환자호출 해야 할 때 overflow-visible 클래스 붙여야만 환자호출 button 출력-->
+                                <div class="card-header py-1 flex justify-between">
+                                    <h4 class="card-title text-sm">1215002</h4>
+                                    <div class="relative">
+                                        <div class="status-default" onclick="toggleDropdown(event, 'dropdown1')">대기</div>
+                                        <div class="dropdown-menu" id="dropdown1">
+                                            <a href="#" class="dropdown-item">
+                                                <span class="dropdown-item-text">환자 호출</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex items-center">
+                                        <h3 class="text-base font-bold mb-1">김유정</h3>
+                                        <p class="description text-sm mb-1 ml-3">M / 30세 (950203)</p>
+                                    </div>
+                                    <span class="badge badge-default">건강보험</span>
+                                </div>
+                            </div>
+                            <!-- 대기 -->
+                            <div class="card overflow-visible"> <!--환자호출 해야 할 때 overflow-visible 클래스 붙여야만 환자호출 button 출력-->
+                                <div class="card-header py-1 flex justify-between">
+                                    <h4 class="card-title text-sm">1215002</h4>
+                                    <div class="relative">
+                                        <div class="status-default" onclick="toggleDropdown(event, 'dropdown1')">대기</div>
+                                        <div class="dropdown-menu" id="dropdown1">
+                                            <a href="#" class="dropdown-item">
+                                                <span class="dropdown-item-text">환자 호출</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex items-center">
+                                        <h3 class="text-base font-bold mb-1">김유정</h3>
+                                        <p class="description text-sm mb-1 ml-3">M / 30세 (950203)</p>
+                                    </div>
+                                    <span class="badge badge-default">건강보험</span>
+                                </div>
+                            </div>
+                            <!-- 대기 -->
+                            <div class="card overflow-visible"> <!--환자호출 해야 할 때 overflow-visible 클래스 붙여야만 환자호출 button 출력-->
+                                <div class="card-header py-1 flex justify-between">
+                                    <h4 class="card-title text-sm">1215002</h4>
+                                    <div class="relative">
+                                        <div class="status-default" onclick="toggleDropdown(event, 'dropdown1')">대기</div>
+                                        <div class="dropdown-menu" id="dropdown1">
+                                            <a href="#" class="dropdown-item">
+                                                <span class="dropdown-item-text">환자 호출</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex items-center">
+                                        <h3 class="text-base font-bold mb-1">김유정</h3>
+                                        <p class="description text-sm mb-1 ml-3">M / 30세 (950203)</p>
+                                    </div>
+                                    <span class="badge badge-default">건강보험</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+
+                <div class="content-area grid grid-1-2 h-full overflow-hidden">
+                    <!--left-->
+                    <div class="content-area_left flex flex-col h-full overflow-hidden">
+                        <!--left-top-->
+                        <div class="box">
+                            <div class="box-title-group">
+                                <h2 class="box-title">
+                                    <span></span>
+                                    <span>121501</span>
+                                    <strong>이채민</strong>
+                                </h2>
+                            </div>
+                            <div class="list-horizontal list-horizontal-2">
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">나이 / 성별</div>
+                                    <div class="list-horizontal-value">25세 / M</div>
+                                </div>
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">생년월일</div>
+                                    <div class="list-horizontal-value">2000-02-02</div>
+                                </div>
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">주민등록번호</div>
+                                    <div class="list-horizontal-value">000202-3******</div>
+                                </div>
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">연락처</div>
+                                    <div class="list-horizontal-value">010-1234-5678</div>
+                                </div>
+                            </div>
+                            <div class="list-horizontal list-horizontal-1">
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">주소</div>
+                                    <div class="list-horizontal-value">대전광역시 중구 문화 1동 은하수아파트</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box box-bordered box-secondary mt-3">
+                            <div class="list-horizontal list-horizontal-2">
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">키/체중</div>
+                                    <div class="list-horizontal-value">182/78</div>
+                                </div>
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">체온</div>
+                                    <div class="list-horizontal-value">36.5</div>
+                                </div>
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">혈압</div>
+                                    <div class="list-horizontal-value">120/94</div>
+                                </div>
+                                <div class="list-horizontal-item">
+                                    <div class="list-horizontal-label">맥박</div>
+                                    <div class="list-horizontal-value">75</div>
+                                </div>
+                            </div>
+                            <div class="form-group mt-3">
+                                <label class="form-label"><i class=""></i> 환자메모</label>
+                                <textarea class="textarea textarea-sm" ></textarea>
+                            </div>
+                        </div>
+                        <hr class="section-divider" />
+                        <!--left-bottom-->
+                        <div class="box">
+                            <div class="tabs tabs-text">
+                                <button class="tab active" onclick="switchTab(event, 'tab1')">내원 이력</button>
+                                <button class="tab" onclick="switchTab(event, 'tab2')">검사 결과</button>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-auto">
+                            <div class="accordion">
+                                <div class="accordion-item active">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-25</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-24</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-23</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-23</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-23</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-23</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-23</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <button class="accordion-header" onclick="toggleAccordion(this)">
+                                        <span class="accordion-header-title">2025-12-23</span>
+                                        <svg class="accordion-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-body">
+                                        <div class="accordion-body-content">
+                                            내용...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--right-->
+                    <div class="content-area_right flex flex-col h-full overflow-hidden">
+                        <!--right-top-->
+                        <div class="box flex-1 overflow-auto">
+                            <div class="box-title-group flex justify-between">
+                                <h2 class="box-title">2025-12-25</h2>
+                                <div class="btn-group-right">
+                                    <button class="btn btn-ghost btn-icon-left">오더 자동 완성</button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-ghost" onclick="toggleDropdown(event, 'docToggle')">환자 서류 작성 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <div class="dropdown-menu" id="docToggle">
+                                            <a href="#" class="dropdown-item">
+                                                <span class="dropdown-item-text">진단서</span>
+                                            </a>
+                                            <a href="#" class="dropdown-item">
+                                                <span class="dropdown-item-text">소견서</span>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-icon btn-ghost" onclick="closeTestModal('basicModal')">❌</button>
+                                </div>
+                            </div>
+                            <!-- 진료기록 -->
+                            <div class="content-group mt-3">
+                                <div class="content-group-header">
+                                    <svg class="content-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    <div class="content-header-title">진료 기록</div>
+                                    <div class="content-header-actions">
+                                        <button class="btn btn-secondary btn-sm">영상실 요청</button>
+                                        <button class="btn btn-light btn-sm">입원 처방</button>
+                                        <button class="btn btn-danger-light btn-sm">수술 처방</button>
+                                    </div>
+                                </div>
+                                
+                                <!--진료 기록 내용-->
+                                <div class="content-group-body">
+                                    <p style="margin-bottom: var(--spacing-md);">다리를 또 다쳤다구요??</p>
+                                    <p style="margin-bottom: var(--spacing-md); color: var(--color-text-secondary);">하... 그럼거면 그냥 쓰으로 갈어다니세요</p>
+                                    
+                                    <hr class="section-divider" />
+                                    <div style="display: flex; gap: var(--spacing-lg); margin-top: var(--spacing-md);">
+                                        <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                            <span style="font-size: var(--font-sm);">입원 처방</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                            <span style="font-size: var(--font-sm);">수술 처방</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                            <span style="font-size: var(--font-sm);">영상 검사(x-ray)</span>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                            <!-- 상병추가 -->
+                            <div class="content-group-divider">
+                                <div class="content-header">
+                                    <svg class="content-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <div class="content-group-title">상병</div>
+                                    <div class="content-group-actions">
+                                        <button class="btn btn-secondary btn-sm">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
+                                            상병 추가
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 3rem;">No</th>
+                                                <th style="width: 3rem;">주</th>
+                                                <th style="width: 4rem;">부</th>
+                                                <th style="width: 8rem;">상병코드</th>
+                                                <th>상병 명</th>
+                                                <th style="width: 4rem;">삭제</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>1</td>
+                                                <td><input type="checkbox" class="checkbox" checked=""></td>
+                                                <td><input type="checkbox" class="checkbox"></td>
+                                                <td>S82.6</td>
+                                                <td>외과(가쪽) 단순 골절</td>
+                                                <td><button class="btn btn-icon btn-destructive btn-sm">×</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td><input type="checkbox" class="checkbox"></td>
+                                                <td><input type="checkbox" class="checkbox" checked=""></td>
+                                                <td>M79.3</td>
+                                                <td>근육통</td>
+                                                <td><button class="btn btn-icon btn-destructive btn-sm">×</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- 치료처방 -->
+                            <div class="content-group-divider">
+                                <div class="content-header mt-3">
+                                    <svg class="content-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <div class="content-group-title">치료 처방</div>
+                                    <div class="content-group-actions">
+                                        <button class="btn btn-secondary btn-sm">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
+                                            치료 추가
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table class="table table-input">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">No</th>
+                                                <th>진료 코드</th>
+                                                <th>진료명</th>
+                                                <th style="width: 150px;">수량</th>
+                                                <th style="width: 150px;">단가</th>
+                                                <th style="width: 80px;">삭제</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>1</td>
+                                                <td><input type="text" class="input" value="D145623"></td>
+                                                <td><input type="text" class="input" value="대장내시경 검사"></td>
+                                                <td><input type="number" class="input" value="1"></td>
+                                                <td><input type="text" class="input" value="100,000"></td>
+                                                <td><button class="btn btn-icon btn-destructive">×</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td><input type="text" class="input" value="J12039"></td>
+                                                <td><input type="text" class="input" value="초음파 검사"></td>
+                                                <td><input type="number" class="input" value="1"></td>
+                                                <td><input type="text" class="input" value="50,000"></td>
+                                                <td><button class="btn btn-icon btn-destructive">×</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>3</td>
+                                                <td>
+                                                    <select class="select">
+                                                        <option>선택하세요</option>
+                                                        <option>A82901</option>
+                                                        <option>B12345</option>
+                                                    </select>
+                                                </td>
+                                                <td><input type="text" class="input" placeholder="진료명 입력"></td>
+                                                <td><input type="number" class="input" value="1"></td>
+                                                <td><input type="text" class="input" placeholder="단가 입력"></td>
+                                                <td><button class="btn btn-icon btn-destructive">×</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- 약제처방 -->
+                            <div class="content-group-divider">
+                                <div class="content-header mt-3">
+                                    <svg class="content-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <div class="content-group-title">약제처방</div>
+                                    <div class="content-group-actions">
+                                        <button class="btn btn-secondary btn-sm">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
+                                            약제 추가
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table class="table table-input">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">No</th>
+                                                <th>진료 코드</th>
+                                                <th>진료명</th>
+                                                <th style="width: 150px;">수량</th>
+                                                <th style="width: 150px;">단가</th>
+                                                <th style="width: 80px;">삭제</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>1</td>
+                                                <td><input type="text" class="input" value="D145623"></td>
+                                                <td><input type="text" class="input" value="대장내시경 검사"></td>
+                                                <td><input type="number" class="input" value="1"></td>
+                                                <td><input type="text" class="input" value="100,000"></td>
+                                                <td><button class="btn btn-icon btn-destructive">×</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td><input type="text" class="input" value="J12039"></td>
+                                                <td><input type="text" class="input" value="초음파 검사"></td>
+                                                <td><input type="number" class="input" value="1"></td>
+                                                <td><input type="text" class="input" value="50,000"></td>
+                                                <td><button class="btn btn-icon btn-destructive">×</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>3</td>
+                                                <td>
+                                                    <select class="select">
+                                                        <option>선택하세요</option>
+                                                        <option>A82901</option>
+                                                        <option>B12345</option>
+                                                    </select>
+                                                </td>
+                                                <td><input type="text" class="input" placeholder="진료명 입력"></td>
+                                                <td><input type="number" class="input" value="1"></td>
+                                                <td><input type="text" class="input" placeholder="단가 입력"></td>
+                                                <td><button class="btn btn-icon btn-destructive">×</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <!--right-footer-->
+                        <div class="area-right_footer pt-3">
+                            <!-- 좌우 배치 -->
+                            <div class="btn-group-justified">
+                                <div class="btn-group-left">
+                                    <button class="btn btn-secondary">진료 예약하기</button>
+                                </div>
+                                <div class="btn-group-right">
+                                    <button class="btn btn-secondary">임시저장</button>
+                                    <button class="btn btn-primary">진료완료</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Dropdown Toggle
+        function toggleDropdown(event, id) {
+            event.stopPropagation();
+            const dropdown = document.getElementById(id);
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            allDropdowns.forEach(d => {
+                if (d.id !== id) d.classList.remove('show');
+            });
+            
+            dropdown.classList.toggle('show');
+        }
+
+        // Close on outside click
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.dropdown-menu, .popover-menu').forEach(el => {
+                el.classList.remove('show');
+            });
+        });
+
+        // Accordion Toggle
+        function toggleAccordion(button) {
+            const item = button.closest('.accordion-item');
+            const accordion = button.closest('.accordion');
+            const isActive = item.classList.contains('active');
+            
+            // 같은 accordion 내의 모든 항목 닫기 (원하면 주석 처리)
+            accordion.querySelectorAll('.accordion-item').forEach(i => {
+                i.classList.remove('active');
+            });
+            
+            // 클릭한 항목 토글
+            if (!isActive) {
+                item.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

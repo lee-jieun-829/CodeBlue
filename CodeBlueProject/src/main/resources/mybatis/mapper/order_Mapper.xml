@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.order.mapper.IOrderMapper">
+
+	<resultMap type="kr.or.ddit.cpr.vo.OrdersVO" id="ordersMap">
+		<result property="orderDate" column="ORDER_DATE"/>
+		<result property="orderRejectDate" column="ORDER_REJECT_DATE"/>
+		<result property="orderNo" column="ORDER_NO"/>
+		<result property="orderStatus" column="ORDER_STATUS"/>
+		<result property="orderTotalamt" column="ORDER_TOTALAMT"/>
+		<result property="employeeNo" column="EMPLOYEE_NO"/>
+		<result property="orderType" column="ORDER_TYPE"/>
+		<result property="orderContent" column="ORDER_CONTENT"/>
+		
+		<collection property="orderDetails"	resultMap="orderDetailMap" />
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.cpr.vo.OrderDetailVO" id="orderDetailMap">
+		<result property="orderDetailNo" column="ORDER_DETAIL_NO"/>
+		<result property="orderDetailCount" column="ORDER_DETAIL_COUNT"/>
+		<result property="orderNo" column="ORDER_NO"/>
+		<result property="orderItemNo" column="ORDER_ITEM_NO"/>
+		<result property="orderItemType" column="ORDER_ITEM_TYPE"/>
+		
+		<collection property="drugList" resultMap="drugMap"/>
+		<collection property="productList" resultMap="productMap"/>
+	</resultMap>
+	
+	<resultMap id="drugMap" type="kr.or.ddit.cpr.vo.DrugVO">
+        <id property="drugNo" column="DRUG_NO"/>
+        <result property="drugCode" column="DRUG_CODE"/>
+        <result property="drugName" column="DRUG_NAME"/>
+        <result property="drugCompany" column="DRUG_COMPANY"/>
+        <result property="drugCost" column="DRUG_COST"/>
+        <result property="drugPrice" column="DRUG_PRICE"/>
+        <result property="drugUnit" column="DRUG_UNIT"/>
+        <result property="drugSpec" column="DRUG_SPEC"/>
+        </resultMap>
+        
+     <resultMap type="kr.or.ddit.cpr.vo.ProductVO" id="productMap">
+     	<result property="productNo" column="PRODUCT_NO"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="productCompany" column="PRODUCT_COMPANY"/>
+		<result property="productCost" column="PRODUCT_COST"/>
+		<result property="productAmount" column="PRODUCT_AMOUNT"/>
+		<result property="productType" column="PRODUCT_TYPE"/>
+		<result property="productSaftyStoke" column="PRODUCT_SAFTY_STOKE"/>
+     </resultMap>
+	
+	<sql id="drugSearch">
+	    <if test="searchWord != null and searchWord != ''">
+	        AND (
+	            DRUG_NAME LIKE '%' || #{searchWord} || '%' 
+	            OR DRUG_COMPANY LIKE '%' || #{searchWord} || '%'
+	        )
+	    </if>
+	</sql>
+	
+	<sql id="productSearch">
+	    <if test="searchWord != null and searchWord != ''">
+	        AND (
+	            PRODUCT_NAME LIKE '%' || #{searchWord} || '%' 
+	            OR PRODUCT_COMPANY LIKE '%' || #{searchWord} || '%'
+	        )
+	    </if>
+	</sql>
+	<sql id="searchOrder">
+	    <if test="searchWord != null and searchWord != ''">
+	        <choose>
+	            
+	            <when test="searchType == 'memName'">
+	                AND M.MEM_NAME LIKE '%' || #{searchWord} || '%'
+	            </when>
+	            
+	            <when test="searchType == 'orderNo'">
+	                AND O.ORDER_NO LIKE '%' || #{searchWord} || '%'
+	            </when>
+	            
+	            <when test="searchType == 'productName'">
+	                AND EXISTS (
+	                    SELECT 1
+	                    FROM ORDER_DETAIL OD
+	                    INNER JOIN PRODUCT P ON OD.PRODUCT_NO = P.PRODUCT_NO
+	                    WHERE OD.ORDER_NO = O.ORDER_NO
+	                      AND P.PRODUCT_NAME LIKE '%' || #{searchWord} || '%'
+	                )
+	            </when>
+	
+	            </choose>
+	    </if>
+	</sql>
+
+	<select id="selectDrugCount" resultType="int">
+        select count(*)
+        from drug
+        WHERE 1=1
+    	<include refid="drugSearch" />
+     </select>
+        
+	<select id="drugSelect" resultType="kr.or.ddit.cpr.vo.DrugVO">
+		SELECT B.*
+        FROM (
+            SELECT A.*, ROWNUM AS RNUM
+            FROM (
+                SELECT 
+                    drug_no, drug_code, drug_name, drug_amount, 
+                    drug_company, drug_cost, drug_price, 
+                    drug_safty_stoke, drug_type, drug_spec, drug_unit
+                FROM DRUG
+                WHERE 1=1
+                <include refid="drugSearch" />
+                ORDER BY DRUG_NO ASC
+            ) A
+        ) B
+        WHERE RNUM BETWEEN #{startRow} AND #{endRow}	
+	</select>
+	
+	<select id="notEnoughDrugSelect" resultType="kr.or.ddit.cpr.vo.DrugVO">
+		<![CDATA[
+	       SELECT 
+		            drug_no, drug_code, drug_name, drug_amount, drug_company, 
+		            drug_cost, drug_price, drug_safty_stoke, drug_type, drug_spec, drug_unit
+		        FROM drug 
+		        WHERE DRUG_AMOUNT < DRUG_SAFTY_STOKE
+		        ORDER BY drug_no ASC
+	    ]]>		
+	</select>
+	
+	<insert id="orderInsert" parameterType="kr.or.ddit.cpr.vo.OrdersVO">
+		<selectKey keyProperty="orderNo" resultType="int" order="BEFORE">
+            SELECT SEQ_ORDER.NEXTVAL FROM DUAL
+        </selectKey>
+		INSERT INTO ORDERS (
+           ORDER_NO, ORDER_STATUS, ORDER_TOTALAMT, EMPLOYEE_NO, ORDER_TYPE, ORDER_DATE
+        ) VALUES (
+            #{orderNo},#{orderStatus},#{orderStatus},#{employeeNo},#{orderType},SYSDATE
+        )
+	</insert>
+	
+	<insert id="detailInsert" parameterType="kr.or.ddit.cpr.vo.OrderDetailVO">
+		<selectKey keyProperty="orderDetailNo" resultType="int" order="BEFORE">
+            SELECT SEQ_ORDER_DETAIL.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO ORDER_DETAIL (
+         	 ORDER_DETAIL_NO, ORDER_DETAIL_COUNT, ORDER_NO, ORDER_ITEM_NO, ORDER_ITEM_TYPE
+        ) VALUES (
+            #{orderDetailNo},#{orderDetailCount},#{orderNo},#{orderItemNo},#{orderItemType}
+        )
+	</insert>
+	
+	<select id="orderSelect" resultMap="ordersMap">
+			SELECT 			    
+			    T1.ORDER_NO, 
+			    T1.ORDER_STATUS, 
+			    T1.ORDER_TOTALAMT, 
+			    T1.EMPLOYEE_NO, 
+			    T1.ORDER_TYPE, 
+			    T1.ORDER_CONTENT, 
+			    T1.ORDER_DATE, 
+			    T1.ORDER_REJECT_DATE,			    
+			   
+			    B.ORDER_DETAIL_NO, 
+			    B.ORDER_DETAIL_COUNT, 
+			    B.ORDER_ITEM_NO, 
+			    B.ORDER_ITEM_TYPE,			    
+			    
+			    C.DRUG_NO, 
+			    C.DRUG_CODE, 
+			    C.DRUG_NAME, 
+			    C.DRUG_AMOUNT, 
+			    C.DRUG_COMPANY, 
+			    C.DRUG_COST, 
+			    C.DRUG_PRICE, 
+			    C.DRUG_SAFTY_STOKE, 
+			    C.DRUG_TYPE, 
+			    C.DRUG_SPEC, 
+			    C.DRUG_UNIT,			
+			   
+			    P.PRODUCT_NO,
+			    P.PRODUCT_CODE,
+			    P.PRODUCT_NAME,
+			    P.PRODUCT_COMPANY,
+			    P.PRODUCT_COST,
+			    P.PRODUCT_AMOUNT,
+			    P.PRODUCT_TYPE,
+			    P.PRODUCT_SAFTY_STOKE 
+			
+			FROM (			    
+			    SELECT A.*
+			    FROM (
+			        SELECT 
+			            ROW_NUMBER() OVER(ORDER BY ORDER_DATE DESC) AS RNUM,
+			            ORDER_NO, 
+			            ORDER_STATUS, 
+			            ORDER_TOTALAMT, 
+			            EMPLOYEE_NO, 
+			            ORDER_TYPE, 
+			            ORDER_CONTENT, 
+			            ORDER_DATE, 
+			            ORDER_REJECT_DATE
+			        FROM ORDERS
+			       	<where>
+				    <if test="empNo != null and empNo != 0">
+				        AND EMPLOYEE_NO = #{empNo}
+				    </if>
+				    
+				    <if test="searchWord != null and searchWord != ''">
+				        AND (ORDER_CONTENT LIKE '%' || #{searchWord} || '%')
+				    </if>
+				</where>		        
+			    ) A
+			    
+			) T1			
+			
+			LEFT OUTER JOIN ORDER_DETAIL B ON T1.ORDER_NO = B.ORDER_NO			
+			
+			LEFT OUTER JOIN DRUG C 
+			    ON B.ORDER_ITEM_NO = C.DRUG_NO 
+			    AND T1.ORDER_TYPE = '001'			
+			
+			LEFT OUTER JOIN PRODUCT P 
+			    ON B.ORDER_ITEM_NO = P.PRODUCT_NO 
+			    AND T1.ORDER_TYPE = '002'
+			
+			ORDER BY T1.ORDER_DATE DESC, B.ORDER_DETAIL_NO ASC
+		</select>
+    
+    <select id="selectOrderCount" resultType="int">
+	    SELECT COUNT(*)
+	    FROM ORDERS O
+	    LEFT JOIN EMPLOYEE M ON O.EMPLOYEE_NO = M.EMPLOYEE_NO
+	    WHERE 1=1
+	    <include refid="searchOrder" />
+	</select>
+    
+    <select id="orderDetailSelect" parameterType="int" resultMap="orderDetailMap">
+		 SELECT		    
+		    A.ORDER_DETAIL_NO, 
+		    A.ORDER_DETAIL_COUNT, 
+		    A.ORDER_NO, 
+		    A.ORDER_ITEM_NO, 
+		    A.ORDER_ITEM_TYPE,	    
+		    B.DRUG_NO, 
+		    B.DRUG_CODE, 
+		    B.DRUG_NAME, 
+		    B.DRUG_AMOUNT, 
+		    B.DRUG_COMPANY, 
+		    B.DRUG_COST, 
+		    B.DRUG_PRICE, 
+		    B.DRUG_SAFTY_STOKE, 
+		    B.DRUG_TYPE, 
+		    B.DRUG_SPEC, 
+		    B.DRUG_UNIT		
+		FROM ORDER_DETAIL A		
+		LEFT OUTER JOIN DRUG B ON A.ORDER_ITEM_NO = B.DRUG_NO 		
+		WHERE A.ORDER_NO = #{orderNo}
+    </select>
+    
+    <select id="selectProductCount" resultType="int">
+        select count(*)
+        from product
+        WHERE 1=1
+    	<include refid="productSearch" />
+     </select>
+        
+	<select id="productSelect" resultType="kr.or.ddit.cpr.vo.ProductVO">
+		SELECT B.*
+        FROM (
+            SELECT A.*, ROWNUM AS RNUM
+            FROM (
+                SELECT 
+                  PRODUCT_NO, PRODUCT_CODE,PRODUCT_NAME,PRODUCT_COMPANY,PRODUCT_COST,PRODUCT_AMOUNT
+                  ,PRODUCT_TYPE,PRODUCT_SAFTY_STOKE
+                FROM product
+                WHERE 1=1
+                <include refid="productSearch" />
+                ORDER BY PRODUCT_NO ASC
+            ) A
+        ) B
+        WHERE RNUM BETWEEN #{startRow} AND #{endRow}	
+	</select>
+    <select id="notEnoughProductSelect" resultType="kr.or.ddit.cpr.vo.ProductVO">
+		<![CDATA[
+	       SELECT 
+		           PRODUCT_NO, PRODUCT_CODE, PRODUCT_NAME, PRODUCT_COMPANY, PRODUCT_COST, PRODUCT_AMOUNT, PRODUCT_TYPE, PRODUCT_SAFTY_STOKE
+		        FROM product 
+		        WHERE PRODUCT_AMOUNT < PRODUCT_SAFTY_STOKE
+		        ORDER BY PRODUCT_NO ASC
+	    ]]>		
+	</select>
+	
+	<update id="drugAmountUpdate">
+	    UPDATE DRUG
+	       SET DRUG_AMOUNT = DRUG_AMOUNT + #{drugAmount}
+	     WHERE DRUG_NO = #{drugNo}
+	</update>
+	
+	<update id="productAmountUpdate">
+	    UPDATE PRODUCT
+	       SET PRODUCT_AMOUNT = PRODUCT_AMOUNT + #{productAmount}
+	     WHERE PRODUCT_NO = #{productNo}
+	</update>
+	
+	<update id="ordersStatusUpdate" parameterType="int">
+		UPDATE ORDERS
+	       SET ORDER_STATUS = '003'
+	     WHERE ORDER_NO = #{orderNo}
+	</update>
+	<delete id="orderDelete">
+		delete 			
+		from orders
+		where ORDER_NO =#{orderNo}
+	</delete>
+	<delete id="orderDetailDelete">
+		delete			
+		from ORDER_DETAIL
+		where ORDER_NO =#{orderNo}
+	</delete>
+	<select id="searchDrugs" resultType="kr.or.ddit.cpr.vo.DrugVO">
+		select 
+			DRUG_NO, DRUG_CODE, DRUG_NAME, DRUG_AMOUNT, DRUG_COMPANY, DRUG_COST, DRUG_PRICE, DRUG_SAFTY_STOKE, DRUG_TYPE, DRUG_SPEC, DRUG_UNIT
+		from drug
+		where  DRUG_NAME LIKE '%' || #{searchWord} || '%' 
+	            OR DRUG_COMPANY LIKE '%' || #{searchWord} || '%'
+	            or DRUG_CODE LIKE '%' || #{searchWord} || '%'
+	</select>
+	<select id="searchProducts" resultType="kr.or.ddit.cpr.vo.ProductVO">
+		select 
+			PRODUCT_NO, PRODUCT_CODE, PRODUCT_NAME, PRODUCT_COMPANY, PRODUCT_COST, PRODUCT_AMOUNT, PRODUCT_TYPE, PRODUCT_SAFTY_STOKE
+		from product
+		where  PRODUCT_NAME LIKE '%' || #{searchWord} || '%' 
+	            OR PRODUCT_COMPANY LIKE '%' || #{searchWord} || '%'	            
+	            OR PRODUCT_CODE LIKE '%' || #{searchWord} || '%'	            
+	</select>
+	<update id="orderupdate">
+		UPDATE ORDERS
+		 SET ORDER_STATUS = #{orderStatus}		 
+		<if test="orderContent != null and orderContent != ''">
+			,ORDER_REJECT_DATE = SYSDATE
+			,ORDER_CONTENT = #{orderContent}
+		</if>							
+	     WHERE ORDER_NO = #{orderNo}
+	</update>
+</mapper>

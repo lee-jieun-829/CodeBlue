@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.execution.therapist.mapper.ITherapistMapper">
+	<!-- 대기 환자 목록 -->
+	<resultMap id="patientWaitingListMap" type="kr.or.ddit.cpr.vo.PredetailWatingListVO">
+        <!-- 환자 정보 -->
+        <result property="patientNo" column="patient_no"/>
+        <result property="patientName" column="patient_name"/>
+        <result property="patientRegno1" column="patient_regno1"/>
+        <result property="patientGen" column="patient_gen"/>
+        <result property="patientAge" column="patient_age"/>
+        
+        <result property="registrationNo" column="registration_no"/>
+        <result property="admissionNo" column="admission_no"/>
+        
+        <result property="orderDate" column="order_date"/>
+        
+        <!-- 치료 정보 -->
+        <result property="preTreatdetailStatus" column="pre_treatdetail_status"/>
+        <result property="treatmentName" column="treatment_name"/>
+        
+        <!-- PredetailVO 중첩 -->
+        <association property="predetailVO" resultMap="preDetailMap"/>
+    </resultMap>
+    
+    <resultMap type="kr.or.ddit.cpr.vo.PredetailVO" id="preDetailMap">
+    	<id property="predetailNo" column="predetail_no"/>
+    	<result property="predetailRegdate" column="predetail_regdate"/>
+    	<result property="chartNo" column="chart_no"/>
+    </resultMap>
+
+	<!-- 환자 정보만 조회용 (오더 제외) -->
+	<resultMap type="kr.or.ddit.cpr.vo.PatientDetailVO" id="patientDetailMap">
+	    <result property="employeeNo" column="employee_no"/>
+	    <result property="employeeName" column="employee_name"/>
+	    <result property="patientAge" column="patient_age"/>
+		<result property="patientBirthdate" column="patient_Birthdate"/>
+		<result property="patientRegnoMasked" column="patient_regno_masked"/>
+		<result property="patientAddr" column="patient_addr"/>
+	    
+	    
+	    <association property="patientVO" javaType="kr.or.ddit.cpr.vo.PatientVO">
+	        <id property="patientNo" column="patient_no"/>
+	        <result property="patientName" column="patient_name"/>
+	        <result property="patientRegno1" column="patient_regno1"/>
+	        <result property="patientRegno2" column="patient_regno2"/>
+	        <result property="patientTel" column="patient_tel"/>
+	        <result property="patientAddr1" column="patient_addr"/>
+	        <result property="patientAddr2" column="patient_addr2"/>
+	        <result property="patientGen" column="patient_gen"/>
+	        <result property="patientMemo" column="patient_memo"/>
+	    </association>
+	    
+	    <!-- ChartVO 중첩 -->
+        <association property="chartVO" javaType="kr.or.ddit.cpr.vo.ChartVO">
+            <id property="chartNo" column="chart_no"/>
+            <result property="registrationNo" column="registration_no"/>
+            <result property="admissionNo" column="admission_no"/>
+        </association>
+	    
+	    <association property="registrationVO" javaType="kr.or.ddit.cpr.vo.RegistrationVO">
+	        <id property="registrationNo" column="registration_no"/>
+	        <result property="registrationVisittype" column="registration_visittype"/>
+	        <result property="registrationInsurance" column="registration_insurance"/>
+	        <result property="registrationRegdate" column="registration_regdate"/>
+	    </association>
+	    
+	    <association property="screeningVO" javaType="kr.or.ddit.cpr.vo.ScreeningVO">
+	        <result property="screeningHeight" column="screening_height"/>
+	        <result property="screeningWeight" column="screening_weight"/>
+	        <result property="screeningSystolic" column="screening_systolic"/>
+	        <result property="screeningDiastolic" column="screening_diastolic"/>
+	        <result property="screeningTemperature" column="screening_temperature"/>
+	        <result property="screeningPulse" column="screening_pulse"/>
+	    </association>
+	    
+	    <!-- PredetailVO 중첩 -->
+        <collection property="predetailVO" resultMap="preDetailMap"/>
+	</resultMap>
+	
+	<resultMap id="orderMap" type="kr.or.ddit.cpr.vo.TreatmentOrderVO">
+	    <id property="predetailNo" column="predetail_no"/>
+	    <result property="chartNo" column="chart_no"/>
+	    <result property="patientNo" column="patient_no"/>
+	    <result property="orderDate" column="order_date"/>
+	    <result property="examCount" column="exam_count"/>
+	    <result property="isCurrentOrder" column="is_current_order"/>
+	    
+	    <collection  property="treatmentVO" ofType="kr.or.ddit.cpr.vo.TreatmentVO">
+	        <id property="treatmentNo" column="treatment_no"/> 
+	        <result property="treatmentCode" column="treatment_code"/>
+	        <result property="treatmentName" column="treatment_name"/>
+	        <result property="treatmentPrice" column="treatment_price"/>
+	        <result property="pretreatmentDetailDose" column="pretreatment_detail_dose"/>
+	        <result property="pretreatmentDetailFreq" column="pretreatment_detail_freq"/>
+	        <result property="pretreatmentDetailDay" column="pretreatment_detail_day"/>
+	        <result property="pretreatmentDetailMethod" column="pretreatment_detail_method"/>
+	        <result property="pretreatmentDetailStatus" column="pretreatment_detail_status"/>
+	        <result property="pretreatmentDetailRemark" column="pretreatment_detail_remark"/>
+	    </collection>
+	</resultMap>
+	
+	
+	<!-- 대기 환자 목록 출력 -->
+	<select id="getWaitingList" parameterType="string" resultMap="patientWaitingListMap">
+        SELECT
+		    a.predetail_no, a.predetail_regdate, a.chart_no,
+		    TO_CHAR(a.predetail_regdate, 'HH24:MI') AS order_date,
+		    b.patient_no, b.registration_no, b.admission_no,
+		    c.patient_name, c.patient_gen, c.patient_regno1,
+		    TRUNC(MONTHS_BETWEEN(SYSDATE, TO_DATE(
+		        CASE
+		            WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('1', '2') THEN '19'
+		            WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('3', '4') THEN '20'
+		        END || c.patient_regno1, 'YYYYMMDD')) / 12) AS patient_age,
+		    d.treatment_name,
+		    (
+		        SELECT common_detail_comment
+		        FROM common_detail
+		        WHERE common_detail_name = d.pretreatment_detail_status
+		        AND common_no = '10'
+		    ) AS pre_treatdetail_status
+		FROM predetail a
+	    INNER JOIN chart b ON a.chart_no = b.chart_no
+	    INNER JOIN patient c ON b.patient_no = c.patient_no
+	    INNER JOIN (
+	        SELECT
+	            pd.predetail_no,
+	            LISTAGG(t.treatment_name, ', ') WITHIN GROUP (ORDER BY t.treatment_name) AS treatment_name,
+	            MAX(pd.pretreatment_detail_status) AS pretreatment_detail_status
+	        FROM
+	            pretreatment_detail pd
+	            INNER JOIN treatment t ON pd.treatment_no = t.treatment_no
+	        GROUP BY
+	            pd.predetail_no
+	    ) d ON a.predetail_no = d.predetail_no
+		WHERE 1=1
+		    AND TRUNC(a.predetail_regdate) = TRUNC(SYSDATE)
+		ORDER BY 
+		    /* 1순위: 상태별 우선순위 강제 부여 */
+		    CASE 
+		        WHEN d.pretreatment_detail_status = '003' THEN 1  /* 치료중 */
+		        WHEN d.pretreatment_detail_status = '001' THEN 3  /* 완료 (최하단) */
+		        ELSE 2                                            /* 대기 등 기타 상태 */
+		    END ASC,
+		    /* 2순위: 먼저 접수된(오래 기다린) 환자 우선 */
+		    a.predetail_regdate ASC
+    </select>
+	
+	<!-- 상태 변경 -->
+	<update id="updateWaitingStatus">
+	    UPDATE pretreatment_detail
+	    SET pretreatment_detail_status = (
+	        select cd.common_detail_name 
+	        from common_detail cd
+	        where cd.common_no = 10 
+	          and cd.common_detail_comment = #{preTreatdetailStatus}
+	    )
+	    WHERE predetail_no = #{predetailNo}
+	</update>
+	
+	<!-- 환자 상세 정보 조회 : 외래/입원 환자 -->
+	<select id="getPatientDetail" parameterType="int" resultMap="patientDetailMap">	    
+	    SELECT 
+	        a.predetail_no
+	      /* 환자 정보 */
+	      , b.chart_no, b.registration_no, b.admission_no
+	      , CASE WHEN b.registration_no IS NULL THEN '입원' ELSE '외래' END AS registration_visittype
+	      , c.patient_no, c.patient_name, c.patient_gen, c.patient_regno1, c.patient_regno2
+	      , c.patient_regno1 || '-' || SUBSTR(c.patient_regno2, 1, 1) || '******' AS patient_regno_masked
+	      , TRUNC(MONTHS_BETWEEN(SYSDATE, TO_DATE(
+	            CASE
+	                WHEN SUBSTR(c.patient_regno2, 1, 1) IN('1', '2') THEN '19'
+	                WHEN SUBSTR(c.patient_regno2, 1, 1) IN('3', '4') THEN '20'
+	            END || c.patient_regno1, 'YYYYMMDD')) / 12) AS patient_age
+	      , TO_CHAR(TO_DATE(CASE WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('1', '2') THEN '19' 
+	            WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('3', '4') 
+	            THEN '20' END || c.patient_regno1, 'YYYYMMDD'), 'YYYY-MM-DD') AS patient_Birthdate
+	      , c.patient_tel, c.patient_addr2
+	      /* 환자 주소 하나로 합치기 => patient_addr1로 받기 */
+	      , c.patient_addr1 || ' ' || c.patient_addr2 AS patient_addr
+	      , c.patient_memo
+	      , d.employee_no, d.employee_name, e.registration_regdate
+	      , (SELECT common_detail_comment
+	         FROM common_detail
+	         WHERE common_detail_name = COALESCE(e.registration_insurance, f.admission_insurance)
+	         AND common_no = '4') AS registration_insurance
+	      /* 바이탈 정보 */
+	      , g.screening_no, g.screening_height, g.screening_weight
+	      , g.screening_systolic, g.screening_diastolic
+	      , g.screening_temperature, g.screening_pulse
+	    FROM predetail a
+	    LEFT OUTER JOIN chart b ON a.chart_no = b.chart_no
+	    LEFT OUTER JOIN patient c ON b.patient_no = c.patient_no
+	    LEFT OUTER JOIN employee d ON b.employee_no = d.employee_no
+	    LEFT OUTER JOIN registration e ON b.registration_no = e.registration_no
+	    LEFT OUTER JOIN admission f ON b.admission_no = f.admission_no
+	    LEFT OUTER JOIN screening g ON b.patient_no = g.patient_no
+	    
+	    WHERE c.patient_no = #{patientNo}
+	</select>
+    
+    <!-- 환자 메모 수정 -->
+	<update id="updatePatientMemo" parameterType="kr.or.ddit.cpr.vo.PatientVO">
+	    UPDATE patient
+		   SET patient_memo = #{patientMemo}
+		 WHERE patient_no = #{patientNo}
+	</update>
+	
+	<!-- 오더 목록 가져오기 => 환자이름 필요없음 -->
+	<select id="getOrderList" parameterType="int" resultMap="orderMap">
+	    SELECT
+            a.predetail_no, a.chart_no, d.patient_no
+          , TO_CHAR(a.predetail_regdate, 'YYYY-MM-DD') AS order_date
+          , COUNT(b.treatment_no) AS exam_count
+          , b.pretreatment_detail_status
+          , CASE 
+                WHEN SUM(CASE WHEN b.pretreatment_detail_status IN ('002', '003') THEN 1 ELSE 0 END) > 0 
+                THEN 'Y' 
+                ELSE 'N' 
+            END AS is_current_order
+        FROM predetail a
+        INNER JOIN pretreatment_detail b ON a.predetail_no = b.predetail_no
+        INNER JOIN treatment c ON b.treatment_no = c.treatment_no
+        INNER JOIN chart d ON a.chart_no = d.chart_no
+        WHERE d.patient_no = #{patientNo}
+        GROUP BY
+            a.predetail_no, a.chart_no, d.patient_no, a.predetail_regdate, b.pretreatment_detail_status
+        ORDER BY
+            a.predetail_regdate DESC
+	</select>
+	
+	<!-- 오더 상세 정보 -->
+	<select id="getOrderDetail" parameterType="int" resultMap="orderMap">
+		SELECT
+		    a.predetail_no, a.chart_no, d.patient_no
+		  , TO_CHAR(a.predetail_regdate, 'YYYY-MM-DD') AS order_date 
+		  , c.treatment_no, c.treatment_code, c.treatment_name
+		  , b.pretreatment_detail_dose, b.pretreatment_detail_freq
+		  , b.pretreatment_detail_method
+		FROM predetail a
+		LEFT JOIN pretreatment_detail b ON a.predetail_no = b.predetail_no
+		LEFT JOIN treatment c ON b.treatment_no = c.treatment_no 
+		INNER JOIN chart d ON a.chart_no = d.chart_no
+		WHERE a.predetail_no = #{predetailNo}
+	</select>
+	
+	<!-- 검사 상태 값 수정 -->
+	<update id="updateComplete" parameterType="kr.or.ddit.cpr.vo.TreatmentVO">
+        UPDATE PRETREATMENT_DETAIL
+        SET 
+            PRETREATMENT_DETAIL_STATUS = #{pretreatmentDetailStatus}                      
+        WHERE 
+	        PREDETAIL_NO = #{predetailNo} 
+    </update>
+</mapper>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.reservation.mapper.IReservationMapper">
+		<select id="selectDoctorList" resultType="map">
+		SELECT
+		EMPLOYEE_NO AS "employeeNo",
+		EMPLOYEE_NAME AS "empName"
+		FROM EMPLOYEE
+		WHERE EMPLOYEE_CODE = '1'
+	</select>
+	
+	<insert id="reservationInsert" parameterType="kr.or.ddit.cpr.vo.ScheduleVO">
+		<selectKey keyProperty="scheduleNo" resultType="int" order="BEFORE">
+            SELECT SEQ_SCHEDULE.NEXTVAL FROM DUAL
+        </selectKey> 
+		INSERT INTO SCHEDULE (
+            SCHEDULE_NO, SCHEDULE_TITLE, SCHEDULE_CONTENT, SCHEDULE_START, SCHEDULE_END, SCHEDULE_TYPE, EMPLOYEE_NO, BACKGROUND_COLOR, SCHEDULE_DOCTOR_NO, PATIENT_NO
+            ) VALUES (
+            #{scheduleNo}, #{scheduleTitle},#{scheduleContent},#{scheduleStart},#{scheduleEnd},#{scheduleType},#{employeeNo},#{backgroundColor},#{scheduleDoctorNo},#{patientNo}
+            )            
+	</insert>
+	
+	<insert id="opReservationInsert" parameterType="kr.or.ddit.cpr.vo.OpScheduleVO">
+		INSERT INTO OP_SCHEDULE(
+			SCHEDULE_NO, EMPLOYEE_NO, OP_SCHEDULE_CONTENT
+		) VALUES (
+			#{scheduleNo}, #{employeeNo}, #{opScheduleContent}
+		)
+	</insert>
+	
+	<select id="selectBusyDoctor" parameterType="map" resultType="int">
+	<![CDATA[
+		SELECT DISTINCT SCHEDULE_DOCTOR_NO
+	    FROM SCHEDULE
+	    WHERE 
+	        SCHEDULE_DOCTOR_NO IS NOT NULL
+	        AND SCHEDULE_TYPE IN ('001', '002', '004')	       
+	        AND SCHEDULE_START < TO_DATE(#{scheduleEnd}, 'YYYY-MM-DD HH24:MI:SS')
+	        AND SCHEDULE_END   > TO_DATE(#{scheduleStart}, 'YYYY-MM-DD HH24:MI:SS')
+	      ]]>
+	    
+	</select>
+	
+	<select id="scheduleList" resultType="kr.or.ddit.cpr.vo.ScheduleVO">
+		SELECT
+			SCHEDULE_NO,
+			SCHEDULE_TITLE,
+			SCHEDULE_CONTENT ,
+			TO_CHAR(SCHEDULE_START, 'YYYY-MM-DD"T"HH24:MI') as SCHEDULE_START,
+			TO_CHAR(SCHEDULE_END, 'YYYY-MM-DD"T"HH24:MI') as SCHEDULE_END,
+			SCHEDULE_TYPE ,
+			EMPLOYEE_NO ,
+			BACKGROUND_COLOR 			
+		FROM SCHEDULE
+		WHERE
+		SCHEDULE_TYPE IN ('002', '003', '004')
+	</select>
+</mapper>

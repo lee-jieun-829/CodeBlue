@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.execution.radiologist.mapper.IRadiologistMapper">
+	<!-- 대기 환자 목록 -->
+	<resultMap id="patientWaitingListMap" type="kr.or.ddit.cpr.vo.PredetailWatingListVO">
+        <!-- 환자 정보 -->
+        <result property="patientNo" column="patient_no"/>
+        <result property="patientName" column="patient_name"/>
+        <result property="patientRegno1" column="patient_regno1"/>
+        <result property="patientGen" column="patient_gen"/>
+        <result property="patientAge" column="patient_age"/>
+        
+        <result property="registrationNo" column="registration_no"/>
+        <result property="admissionNo" column="admission_no"/>
+        
+        <result property="orderDate" column="order_date"/>
+        
+        <!-- 검사 정보 -->
+        <result property="preExamdetailStatus" column="pre_examdetail_status"/>
+        <result property="examinationName" column="examination_name"/>
+        
+        <!-- PredetailVO 중첩 -->
+        <association property="predetailVO" resultMap="preDetailMap"/>
+    </resultMap>
+    
+    <resultMap type="kr.or.ddit.cpr.vo.PredetailVO" id="preDetailMap">
+    	<id property="predetailNo" column="predetail_no"/>
+    	<result property="predetailRegdate" column="predetail_regdate"/>
+    	<result property="chartNo" column="chart_no"/>
+    </resultMap>
+
+	<!-- 환자 정보만 조회용 (오더 제외) -->
+	<resultMap type="kr.or.ddit.cpr.vo.PatientDetailVO" id="patientDetailMap">
+	    <result property="employeeNo" column="employee_no"/>
+	    <result property="employeeName" column="employee_name"/>
+	    <result property="patientAge" column="patient_age"/>
+		<result property="patientBirthdate" column="patient_Birthdate"/>
+		<result property="patientRegnoMasked" column="patient_regno_masked"/>
+		<result property="patientAddr" column="patient_addr"/>
+	    
+	    <association property="patientVO" javaType="kr.or.ddit.cpr.vo.PatientVO">
+	        <id property="patientNo" column="patient_no"/>
+	        <result property="patientName" column="patient_name"/>
+	        <result property="patientRegno1" column="patient_regno1"/>
+	        <result property="patientRegno2" column="patient_regno2"/>
+	        <result property="patientTel" column="patient_tel"/>
+	        <result property="patientAddr1" column="patient_addr"/>
+	        <result property="patientAddr2" column="patient_addr2"/>
+	        <result property="patientGen" column="patient_gen"/>
+	        <result property="patientMemo" column="patient_memo"/>
+	    </association>
+	    
+	    <!-- ChartVO 중첩 -->
+        <association property="chartVO" javaType="kr.or.ddit.cpr.vo.ChartVO">
+            <id property="chartNo" column="chart_no"/>
+            <result property="registrationNo" column="registration_no"/>
+            <result property="admissionNo" column="admission_no"/>
+        </association>
+	    
+	    <association property="registrationVO" javaType="kr.or.ddit.cpr.vo.RegistrationVO">
+	        <id property="registrationNo" column="registration_no"/>
+	        <result property="registrationVisittype" column="registration_visittype"/>
+	        <result property="registrationInsurance" column="registration_insurance"/>
+	        <result property="registrationRegdate" column="registration_regdate"/>
+	    </association>
+	    
+	    <association property="screeningVO" javaType="kr.or.ddit.cpr.vo.ScreeningVO">
+	        <result property="screeningHeight" column="screening_height"/>
+	        <result property="screeningWeight" column="screening_weight"/>
+	        <result property="screeningSystolic" column="screening_systolic"/>
+	        <result property="screeningDiastolic" column="screening_diastolic"/>
+	        <result property="screeningTemperature" column="screening_temperature"/>
+	        <result property="screeningPulse" column="screening_pulse"/>
+	    </association>
+	    
+	    <!-- PredetailVO 중첩 -->
+        <collection property="predetailVO" resultMap="preDetailMap"/>
+	</resultMap>
+	
+	
+	<!-- 대기 환자 목록 출력 -->
+	<select id="getWaitingList" parameterType="string" resultMap="patientWaitingListMap">
+        SELECT
+            a.predetail_no, a.predetail_regdate, a.chart_no
+          , TO_CHAR(a.predetail_regdate, 'HH24:MI') AS order_date
+          , b.patient_no, b.registration_no, b.admission_no
+          , c.patient_name, c.patient_gen, c.patient_regno1
+          , TRUNC(MONTHS_BETWEEN(SYSDATE, TO_DATE(
+                CASE
+                    WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('1', '2') THEN '19'
+                    WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('3', '4') THEN '20'
+                END || c.patient_regno1, 'YYYYMMDD')) / 12) AS patient_age
+          , d.examination_name
+          , (
+	            SELECT common_detail_comment
+	            FROM common_detail
+	            WHERE common_detail_name = d.preexamination_detail_status
+	            AND common_no = '11'
+        	) AS pre_examdetail_status
+        FROM
+            predetail a
+            INNER JOIN chart b ON a.chart_no = b.chart_no
+            INNER JOIN patient c ON b.patient_no = c.patient_no
+            INNER JOIN (
+                SELECT
+                    pa.predetail_no
+                  , LISTAGG(pb.examination_name, ',') WITHIN GROUP (ORDER BY pb.examination_name) AS examination_name
+                  , MAX(pa.PREEXAMINATION_DETAIL_STATUS) AS preexamination_detail_status
+                FROM
+                    preexamination_detail pa
+                    INNER JOIN examination pb ON pa.examination_no = pb.examination_no
+                WHERE REGEXP_LIKE(pb.examination_name, 'X-RAY|MRI|CT', 'i')
+                GROUP BY
+                    pa.predetail_no
+            ) d ON a.predetail_no = d.predetail_no
+        WHERE 1=1
+        	AND TRUNC(a.predetail_regdate) = TRUNC(SYSDATE)
+        ORDER BY 
+        	/* 1순위: 상태별 우선순위 강제 부여 */
+		    CASE 
+		        WHEN d.preexamination_detail_status = '003' THEN 1  /* 치료중 */
+		        WHEN d.preexamination_detail_status = '001' THEN 3  /* 완료 (최하단) */
+		        ELSE 2                                            /* 대기 등 기타 상태 */
+		    END ASC,
+		    /* 2순위: 먼저 접수된(오래 기다린) 환자 우선 */
+		    a.predetail_regdate ASC
+    </select>
+	
+	<!-- 상태 변경 -->
+	<update id="updateWaitingStatus">
+	    UPDATE preexamination_detail
+	    SET preexamination_detail_status = (
+	        select cd.common_detail_name 
+	        from common_detail cd
+	        where cd.common_no = 11 
+	          and cd.common_detail_comment = #{preExamdetailStatus}
+	    )
+	    WHERE predetail_no = #{predetailNo}
+	</update>
+	
+	<!-- 환자 상세 정보 조회 : 외래/입원 환자 -->
+	<select id="getPatientDetail" parameterType="int" resultMap="patientDetailMap">	    
+	    SELECT 
+	        a.predetail_no
+	      /* 환자 정보 */
+	      , b.chart_no, b.registration_no, b.admission_no
+	      , CASE WHEN b.registration_no IS NULL THEN '입원' ELSE '외래' END AS registration_visittype
+	      , c.patient_no, c.patient_name, c.patient_gen, c.patient_regno1, c.patient_regno2
+	      , c.patient_regno1 || '-' || SUBSTR(c.patient_regno2, 1, 1) || '******' AS patient_regno_masked
+	      , TRUNC(MONTHS_BETWEEN(SYSDATE, TO_DATE(
+	            CASE
+	                WHEN SUBSTR(c.patient_regno2, 1, 1) IN('1', '2') THEN '19'
+	                WHEN SUBSTR(c.patient_regno2, 1, 1) IN('3', '4') THEN '20'
+	            END || c.patient_regno1, 'YYYYMMDD')) / 12) AS patient_age
+	      , TO_CHAR(TO_DATE(CASE WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('1', '2') THEN '19' 
+	            WHEN SUBSTR(c.patient_regno2, 1, 1) IN ('3', '4') 
+	            THEN '20' END || c.patient_regno1, 'YYYYMMDD'), 'YYYY-MM-DD') AS patient_Birthdate
+	      , c.patient_tel, c.patient_addr2
+	      /* 환자 주소 하나로 합치기 => patient_addr1로 받기 */
+	      , c.patient_addr1 || ' ' || c.patient_addr2 AS patient_addr
+	      , c.patient_memo
+	      , d.employee_no, d.employee_name, e.registration_regdate
+	      , (SELECT common_detail_comment
+	         FROM common_detail
+	         WHERE common_detail_name = COALESCE(e.registration_insurance, f.admission_insurance)
+	         AND common_no = '4') AS registration_insurance
+	      /* 바이탈 정보 */
+	      , g.screening_no, g.screening_height, g.screening_weight
+	      , g.screening_systolic, g.screening_diastolic
+	      , g.screening_temperature, g.screening_pulse
+	    FROM predetail a
+	    LEFT OUTER JOIN chart b ON a.chart_no = b.chart_no
+	    LEFT OUTER JOIN patient c ON b.patient_no = c.patient_no
+	    LEFT OUTER JOIN employee d ON b.employee_no = d.employee_no
+	    LEFT OUTER JOIN registration e ON b.registration_no = e.registration_no
+	    LEFT OUTER JOIN admission f ON b.admission_no = f.admission_no
+	    LEFT OUTER JOIN screening g ON b.patient_no = g.patient_no
+	    
+	    WHERE c.patient_no = #{patientNo}
+	</select>
+	
+	<!-- 오더 목록 가져오기 -->
+	<select id="getOrderList" parameterType="int" resultType="kr.or.ddit.cpr.vo.ExamOrderVO">
+   	 	select
+		    a.predetail_no
+		  , a.chart_no
+		  , TO_CHAR(a.predetail_regdate, 'YYYY-MM-DD') AS order_date
+		  , (
+		    select
+		      cd.common_detail_comment
+		    from common_detail cd
+		    where cd.common_no = '8'
+		    and cd.common_detail_name = '002'
+		  ) as predetail_type
+		  , count(b.examination_no) as exam_count
+		  , d.patient_no
+		  , b.preexamination_detail_status
+		  , case when sum(
+		    case when b.preexamination_detail_status in ('002','003') then 1
+		    else 0 end
+		  ) > 0 then 'Y' else 'N' end as is_current_order
+		from predetail a
+		inner join preexamination_detail b on a.predetail_no = b.predetail_no
+		inner join examination c on b.examination_no = c.examination_no
+		inner join chart d on a.chart_no = d.chart_no
+		where d.patient_no = #{patientNo}
+		and REGEXP_LIKE(c.examination_name, 'X-RAY|MRI|CT', 'i')
+		group by 
+		    a.predetail_no, a.chart_no, a.predetail_regdate, predetail_type, 
+		    d.patient_no, b.preexamination_detail_status
+		order by a.predetail_regdate desc
+	</select>
+	
+	<!-- 오더 상세 조회 => 쿼리 적합성 확인 필요(2026.01.12 빈다예) -->
+	<select id="getOrderDetail" parameterType="int" resultType="kr.or.ddit.cpr.vo.ExamOrderVO">
+        select
+		    a.predetail_no, a.chart_no
+		  , TO_CHAR(a.predetail_regdate, 'YYYY-MM-DD') AS order_date
+		  , (
+		    select
+		        cd.common_detail_comment
+		    from common_detail cd
+		    where cd.common_no = '8'
+		    and cd.common_detail_name = '002'
+		    ) as predetail_type
+		  , c.examination_no
+		  , c.examination_name
+		  , b.preexamination_no
+		  , b.preexamination_detail_site as preExamdetailSite
+		  , b.preexamination_detail_laterality as preExamdetailLaterality
+		  , (
+		  	SELECT common_detail_comment
+            FROM common_detail
+            WHERE common_detail_name = b.preexamination_detail_status
+            AND common_no = '11'
+		  ) as preExamdetailStatus
+		  , b.attachment_no
+		from predetail a
+		inner join preexamination_detail b on a.predetail_no = b.predetail_no
+		inner join examination c on b.examination_no = c.examination_no
+		where a.predetail_no = #{predetailNo}
+		and REGEXP_LIKE(c.examination_name, 'X-RAY|MRI|CT', 'i')
+		order by b.preexamination_no desc
+    </select>
+	
+	<!-- 차트 기준 환자 정보 불러오기 => 파일 저장할 폴더 만들기 위해 -->
+	<select id="getPatientInfoByChartNo" parameterType="int" resultType="kr.or.ddit.cpr.vo.ExamOrderVO">
+        SELECT 
+            C.PATIENT_NO,
+            P.PATIENT_NAME, c.chart_no,
+            TO_CHAR(c.CHART_REGDATE, 'YYYY-MM-DD') AS orderDate
+        FROM CHART C
+        JOIN PATIENT P ON C.PATIENT_NO = P.PATIENT_NO
+        WHERE C.CHART_NO = #{chartNo}
+    </select>
+    
+	<!-- 첨부파일 등록 -->
+	<insert id="insertAttachment" parameterType="kr.or.ddit.cpr.vo.AttachmentVO">
+		<selectKey keyProperty="attachmentNo" resultType="int" order="BEFORE">
+            SELECT SEQ_ATTACHMENT.NEXTVAL FROM DUAL
+        </selectKey>
+        
+        INSERT INTO ATTACHMENT (
+            ATTACHMENT_NO, ATTACHMENT_DATE
+        ) VALUES (
+            #{attachmentNo}, SYSDATE
+        )
+	</insert>
+	
+	<!-- 첨부파일 상세 정보 등록 -->
+	<insert id="insertAttachmentDetail" parameterType="kr.or.ddit.cpr.vo.AttachmentDetailVO">
+		INSERT INTO ATTACHMENT_DETAIL (
+            ATTACHMENT_DETAIL_NO, ATTACHMENT_NO, ATTACHMENT_DETAIL_NAME,
+            ATTACHMENT_DETAIL_MIME, ATTACHMENT_DETAIL_PATH,
+            ATTACHMENT_DETAIL_EXT, ATTACHMENT_DETAIL_SIZE, ATTACHMENT_DETAIL_DATE
+        ) VALUES (
+            SEQ_ATTACHMENT_DETAIL.NEXTVAL, #{attachmentNo}, #{attachmentDetailName}, 
+            #{attachmentDetailMime}, #{attachmentDetailPath}, 
+            #{attachmentDetailExt}, #{attachmentDetailSize}, SYSDATE
+        )
+	</insert>
+	
+	<!-- 검사 상태 값 수정 -->
+    <update id="updateCompleteExam" parameterType="kr.or.ddit.cpr.vo.ExamOrderVO">
+     	UPDATE PREEXAMINATION_DETAIL
+	    SET 
+	        PREEXAMINATION_DETAIL_STATUS = #{preExamdetailStatus}, 
+        	ATTACHMENT_NO = #{attachmentNo}                         
+	    WHERE 
+	        PREEXAMINATION_NO = #{preexaminationNo}
+    </update>
+    
+    <!-- 환자 메모 수정 -->
+	<update id="updatePatientMemo" parameterType="kr.or.ddit.cpr.vo.PatientVO">
+	    UPDATE patient
+		   SET patient_memo = #{patientMemo}
+		 WHERE patient_no = #{patientNo}
+	</update>
+</mapper>

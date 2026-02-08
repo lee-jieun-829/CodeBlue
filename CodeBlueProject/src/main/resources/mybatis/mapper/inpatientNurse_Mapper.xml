@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.inpatient.mapper.IInpatientNurseMapper">
+
+	<resultMap id="orderMap" type="kr.or.ddit.cpr.vo.OrderListVO">
+	    <id property="patientNo" column="PATIENT_NO"/>
+	    <result property="patientName" column="PATIENT_NAME"/>
+	    <result property="patientGen" column="PATIENT_GEN"/>
+	    <result property="patientAge" column="PATIENT_AGE"/>
+	    <result property="admissionStatus" column="ADMISSION_STATUS"/>
+	    <result property="admissionInsurance" column="ADMISSION_INSURANCE"/>
+	    <result property="roomNo" column="ROOM_NO"/>
+	    <result property="locationName" column="LOCATION_NAME"/>
+	    <result property="employeeName" column="EMPLOYEE_NAME"/>
+	    
+	    <result property="admissionNo" column="ADMISSION_NO" />
+	    <result property="chartNo" column="CHART_NO" />
+	    
+	    <collection property="diet" column="CHART_NO" select="selectDiet" />
+	    <collection property="drug" column="CHART_NO" select="selectDrug" />
+	    <collection property="treatment" column="CHART_NO" select="selectTreatment" />
+	    <collection property="examination" column="CHART_NO" select="selectExamination" />
+	    <collection property="operation" column="CHART_NO" select="selectOperation" />
+		
+	</resultMap>
+	
+	<resultMap id="clinicalDetailMap" type="kr.or.ddit.cpr.vo.ClinicalDetailVO">
+	    <id property="patientNo" column="PATIENT_NO"/>
+	    <result property="patientName" column="PATIENT_NAME"/>
+	    <result property="patientGen" column="PATIENT_GEN"/>
+	    <result property="patientAge" column="PATIENT_AGE"/>
+	    <result property="admissionStatus" column="ADMISSION_STATUS"/>
+	    <result property="admissionInsurance" column="ADMISSION_INSURANCE"/>
+	    <result property="roomNo" column="ROOM_NO"/>
+	    <result property="locationName" column="LOCATION_NAME"/>
+	    <result property="employeeName" column="EMPLOYEE_NAME"/>
+	    
+	    <result property="admissionNo" column="ADMISSION_NO" />
+	    <result property="chartNo" column="CHART_NO" />
+	    <result property="preoperationRegdate" column="PREOPERATION_REGDATE" />
+	    
+	    <collection property="progressNotes" column="CHART_NO" select="selectProgressnote" />
+	    <collection property="diagnosis" column="CHART_NO" select="selectDiagnosis" />
+	    <collection property="nursingCharts" column="CHART_NO" select="selectNursingchart" />
+	    <collection property="assessments" column="CHART_NO" select="selectAssessment" />
+	    <collection property="consultations" column="CHART_NO" select="selectConsultantresult" />
+	    
+	    <collection property="diet" column="CHART_NO" select="selectDiet" />
+	    <collection property="drug" column="CHART_NO" select="selectDrug" />
+	    <collection property="treatment" column="CHART_NO" select="selectTreatment" />
+	    <collection property="examination" column="CHART_NO" select="selectExamination" />
+	    <collection property="operation" column="CHART_NO" select="selectOperation" />
+	    
+	    <collection property="fileList" column="CHART_NO" select="selectExamAttachment" />
+	</resultMap>
+
+	<resultMap id="inpatientMap" type="kr.or.ddit.cpr.vo.InpatientVO">
+        <id property="patientNo" column="PATIENT_NO"/>
+        <result property="patientName" column="PATIENT_NAME"/>
+        <result property="patientGen" column="PATIENT_GEN"/>
+        <result property="patientAge" column="PATIENT_AGE"/>
+        <result property="admissionStatus" column="ADMISSION_STATUS"/>
+        <result property="admissionInsurance" column="ADMISSION_INSURANCE"/>
+        <result property="roomNo" column="ROOM_NO"/>
+        <result property="locationName" column="LOCATION_NAME"/>
+        <result property="employeeName" column="EMPLOYEE_NAME"/>
+    </resultMap>
+	<!-- 입원 환자 정보 -->
+	<select id="inPatientSelect" resultMap="inpatientMap">
+		 SELECT 
+		    a.ADMISSION_NO, 
+		    a.ADMISSION_VISITTYPE, 
+		    a.ADMISSION_INSURANCE, 
+		    a.ADMISSION_DATE, 
+		    a.DISCHARGE_DATE, 
+		    a.ADMISSION_STATUS, 
+		    a.PATIENT_NO, 
+		    a.BED_NO, 
+		    a.EMPLOYEE_NO,
+		   	e.employee_name,
+		    p.PATIENT_NAME,  
+		    p.patient_Gen,
+		    c.CHART_NO,
+		    EXTRACT(YEAR FROM SYSDATE) - 
+			    TO_NUMBER(
+			        CASE SUBSTR(p.PATIENT_REGNO2, 1, 1)
+			            -- 1900년대생 (내국인:1,2 / 외국인:5,6)
+			            WHEN '1' THEN '19' 
+			            WHEN '2' THEN '19' 
+			            WHEN '5' THEN '19' 
+			            WHEN '6' THEN '19'
+			            -- 2000년대생 (내국인:3,4 / 외국인:7,8)
+			            WHEN '3' THEN '20' 
+			            WHEN '4' THEN '20' 
+			            WHEN '7' THEN '20' 
+			            WHEN '8' THEN '20'
+			            -- 1800년대생 (내국인:9,0) -> 100세 이상 어르신
+			            WHEN '9' THEN '18' 
+			            WHEN '0' THEN '18'
+			            -- 그 외는 기본 1900년대로 (데이터 오류 방지용)
+			            ELSE '19'
+			        END || SUBSTR(p.PATIENT_REGNO1, 1, 2)
+			    ) AS PATIENT_AGE,
+			    p.PATIENT_REGNO1,
+			    p.PATIENT_MEMO		    
+		FROM 
+		    ADMISSION a
+		LEFT JOIN 
+		    PATIENT p ON a.PATIENT_NO = p.PATIENT_NO
+		LEFT JOIN 
+			employee e ON a.employee_no = e.employee_no
+		LEFT JOIN 
+			CHART c ON a.ADMISSION_NO = c.ADMISSION_NO
+	</select>
+	
+	<select id="locationSelect" resultType="kr.or.ddit.cpr.vo.LocationVO">
+		select
+			LOCATION_NO, LOCATION_CODE, LOCATION_NAME, EMPLOYEE_NO
+		from location
+	</select>
+	
+	<update id="bedUpdate" parameterType="kr.or.ddit.cpr.vo.InpatientVO">
+		UPDATE ADMISSION
+	       SET BED_NO = #{bedNo}
+	     WHERE PATIENT_NO = #{patientNo}
+	     AND ADMISSION_STATUS IN ('001', '002')		
+	</update>
+	
+	<update id="updateBedStatus" parameterType="kr.or.ddit.cpr.vo.BedVO">
+	    UPDATE BED
+	       SET BED_STATUS = #{bedStatus}
+	     WHERE BED_NO = #{bedNo}
+	</update>
+</mapper>

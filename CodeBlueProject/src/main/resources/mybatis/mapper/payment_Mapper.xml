@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.billing.mapper.IPaymentMapper">
+	
+	<!-- 외래 수납 대기 목록 조회 (수납대기(004)인 환자) -->
+	<select id="selectOutpatientWaitingList" resultType="java.util.HashMap">
+		SELECT 
+	          r.registration_no
+	        , p.patient_name
+	        , p.patient_no
+	        , l.location_name as location_no
+	        , e.employee_name
+	        , r.registration_status
+	    FROM registration r
+	    JOIN patient p ON r.patient_no = p.patient_no
+	    JOIN employee e ON r.employee_no = e.employee_no
+	    LEFT OUTER JOIN location l ON r.location_no = l.location_no
+	    WHERE r.registration_status = '004'
+	      AND r.registration_regdate >= TRUNC(SYSDATE)
+	    ORDER BY r.registration_no ASC
+	</select>
+	
+	<!-- 입원 수납 대기 목록 조회(퇴원대기(002), 퇴원수납대기(003)인 환자) -->
+	<select id="selectInpatientWaitingList" resultType="java.util.HashMap">
+		SELECT 
+	          a.admission_no
+	        , p.patient_name
+	        , p.patient_no
+	        , a.admission_status
+	        , b.bed_no
+	        , r.room_grade
+	        , GREATEST(TRUNC(SYSDATE - a.admission_date), 1) AS stayDays
+	    FROM admission a
+	    JOIN patient p ON a.patient_no = p.patient_no
+	    JOIN bed b ON a.bed_no = b.bed_no
+	    JOIN room r ON b.room_no = r.room_no
+	    WHERE a.admission_status IN ('002', '003')
+	    ORDER BY a.admission_no ASC
+	</select>
+	
+	<!-- 외래 수납 상세 내역 조회 -->
+	<select id="selectPrescriptionDetails" parameterType="int" resultType="java.util.HashMap">
+	    /* 1. 검사 처방 내역 (단가 * 횟수) */
+	    SELECT 
+	          '검사' AS category
+	        , e.examination_name AS item_name
+	        , (e.examination_price * pd.PREEXAMINATION_DETAIL_FREQ) AS item_price
+	    FROM chart c
+	    JOIN predetail p ON c.chart_no = p.chart_no
+	    JOIN PREEXAMINATION_DETAIL pd ON p.predetail_no = pd.PREDETAIL_NO
+	    JOIN examination e ON pd.EXAMINATION_NO = e.examination_no
+	    WHERE c.registration_no = #{registrationNo}
+	        AND pd.PREEXAMINATION_DETAIL_STATUS = '001'
+	
+	    UNION ALL
+	
+	    /* 2. 치료 처방 내역 (단가 * 횟수) */
+	    SELECT 
+	          '치료' AS category
+	        , t.treatment_name AS item_name
+	        , (t.treatment_price * td.PRETREATMENT_DETAIL_FREQ) AS item_price
+	    FROM chart c
+	    JOIN predetail p ON c.chart_no = p.chart_no
+	    JOIN PRETREATMENT_DETAIL td ON p.predetail_no = td.PREDETAIL_NO
+	    JOIN treatment t ON td.TREATMENT_NO = t.treatment_no
+	    WHERE c.registration_no = #{registrationNo}
+	        AND td.PRETREATMENT_DETAIL_STATUS = '001'
+	    
+	    UNION ALL
+	    
+	    /* 3. 약 처방(주사) 내역 (단가 * 횟수) */
+	    SELECT 
+	          '주사' AS category
+	        , d.drug_name AS item_name
+	        , (d.drug_price * pdd.PREDRUG_DETAIL_FREQ) AS item_price
+	    FROM chart c
+	    JOIN predetail p ON c.chart_no = p.chart_no
+	    JOIN PREDRUG_DETAIL pdd ON p.predetail_no = pdd.PREDETAIL_NO
+	    JOIN drug d ON pdd.DRUG_NO = d.drug_no
+	    WHERE c.registration_no = #{registrationNo}
+	        AND pdd.PREDRUG_DETAIL_TYPE = 'N' /* 주사 */
+	        AND pdd.PREDRUG_DETAIL_STATUS = '001'
+	</select>
+	
+	<!-- 외래 수납 현재 상태 재조회 (중복 수납 방지) -->
+	<select id="selectRegistrationStatus" parameterType="map" resultType="string">
+	    SELECT registration_status
+	    FROM registration
+	    WHERE registration_no = #{registrationNo}
+	</select>
+	
+	<!-- 입원 수납 현재 상태 재조회 (중복 수납 방지) -->
+	<select id="selectAdmissionStatus" parameterType="map" resultType="string">
+	    SELECT admission_status
+	    FROM admission
+	    WHERE admission_no = #{admissionNo}
+	</select>
+	
+	<!-- 외래 수납 완료 처리 -->
+	<update id="updateRegistrationStatus" parameterType="map">
+        UPDATE registration
+           SET registration_status = #{registrationStatus}
+         WHERE registration_no = #{registrationNo}
+    </update>
+    
+     <!-- (외래) 수납 내역 저장 -->
+    <insert id="insertBill" parameterType="map">
+    	<selectKey keyProperty="billNo" resultType="int" order="BEFORE">
+    		SELECT SEQ_BILLS.NEXTVAL FROM DUAL
+    	</selectKey>
+    	INSERT INTO bills(
+    		  bill_no
+    		, bill_amount
+    		, patient_no
+    		, registration_no
+    		, admission_no
+    	) VALUES (
+    		  #{billNo}
+    		, #{paymentAmount}
+    		, #{patientNo}
+    		,<choose>
+                <when test="registrationNo != null">#{registrationNo}</when>
+                <otherwise>NULL</otherwise>
+            </choose>,
+            <choose>
+                <when test="admissionNo != null">#{admissionNo}</when>
+                <otherwise>NULL</otherwise>
+            </choose>
+    	)
+    </insert>
+    
+    <!-- 결제 내역 저장 -->
+    <insert id="insertPayment" parameterType="map">
+	    INSERT INTO payment (
+	          bill_no
+	        , payment_amount
+	        , payment_date
+	        , payment_status
+	        <if test="pgUid != null">, pg_uid</if> 
+	        <if test="resUid != null">, res_uid</if>   /* 카카오 결제고유아이디(TID) 저장 컬럼 */
+	    ) VALUES (
+	           #{billNo}
+	         , #{paymentAmount}
+	         , SYSDATE
+	         , 'Y'
+	         <if test="pgUid != null">, #{pgUid}</if>
+	         <if test="resUid != null">, #{resUid}</if>   /* executeFinalPayment에서 넘겨준 tid 값 */
+	    )
+	</insert>
+    
+    <!-- 입원 수납 상세 내역 조회(수술, 입원비) -->
+	<select id="selectInpatientPrescriptionDetails" parameterType="int" resultType="java.util.HashMap">
+	   
+	
+	    /* 수술 처방 내역 */
+	    SELECT 
+	          o.operation_name AS NAME
+	        , o.operation_price AS PRICE 
+	    FROM admission a
+	    JOIN chart c ON a.admission_no = c.admission_no 
+	    JOIN predetail p ON c.chart_no = p.chart_no
+	    JOIN preoperation po ON p.predetail_no = po.predetail_no 
+	    JOIN operation o ON po.operation_no = o.operation_no
+	    WHERE a.admission_no = #{admissionNo}
+	        AND (po.preoperation_status = '001' OR po.preoperation_yn = 'Y')
+	
+	    UNION ALL
+	
+	    /* 입원비 (병실 등급 가격 * 입원 일수) */
+	    SELECT 
+	          r.room_grade || ' 입원료' AS NAME
+	        , (r.room_price * GREATEST(TRUNC(SYSDATE - a.admission_date), 1)) AS PRICE 
+	    FROM admission a
+	    JOIN bed b ON a.bed_no = b.bed_no
+	    JOIN room r ON b.room_no = r.room_no
+	    WHERE a.admission_no = #{admissionNo}
+	</select>
+    
+    <!-- 입원 수납 상세 내역 조회(약품, 치료, 검사, 식이, 수술) -->
+	<select id="selectPredetailListByAdmission" parameterType="int" 
+	        resultMap="kr.or.ddit.cpr.prescription.mapper.IPrescriptionMapper.predetailMap">
+	    SELECT 
+	          P.PREDETAIL_NO, P.PREDETAIL_REGDATE, P.PREDETAIL_TYPE, P.CHART_NO, P.PREDETAIL_STATUS
+	        , C.EMPLOYEE_NO AS CHART_EMP_NO
+	        /* 1. 약품 상세 */
+	        , PD.DRUG_NO, D1.DRUG_NAME, D1.DRUG_PRICE, PD.PREDRUG_DETAIL_FREQ, PD.PREDRUG_DETAIL_STATUS
+	        /* 2. 치료 상세 */
+	        , TD.TREATMENT_NO, T1.TREATMENT_NAME, T1.TREATMENT_PRICE, TD.PRETREATMENT_DETAIL_FREQ, TD.PRETREATMENT_DETAIL_STATUS
+	        /* 3. 검사 상세 */
+	        , ED.PREEXAMINATION_NO , ED.EXAMINATION_NO, E1.EXAMINATION_NAME, E1.EXAMINATION_PRICE, ED.PREEXAMINATION_DETAIL_FREQ, ED.PREEXAMINATION_DETAIL_STATUS
+	        /* 4. 식이 상세 */
+	        , DT.DIET_NO, D2.DIET_NAME, D2.DIET_PRICE, DT.PREDIET_FREQ, DT.PREDIET_STATUS
+	        /* 5. 수술 상세 */
+        , PO.OPERATION_NO, PO.PREOPERATION_REGDATE, PO.PREOPERATION_STATUS, PO.PREOPERATION_YN, O1.OPERATION_NAME, O1.OPERATION_PRICE
+	    FROM PREDETAIL P
+	    JOIN CHART C ON P.CHART_NO = C.CHART_NO
+	    LEFT OUTER JOIN PREDRUG_DETAIL PD ON P.PREDETAIL_NO = PD.PREDETAIL_NO
+	    LEFT OUTER JOIN DRUG D1 ON PD.DRUG_NO = D1.DRUG_NO
+	    LEFT OUTER JOIN PRETREATMENT_DETAIL TD ON P.PREDETAIL_NO = TD.PREDETAIL_NO
+	    LEFT OUTER JOIN TREATMENT T1 ON TD.TREATMENT_NO = T1.TREATMENT_NO
+	    LEFT OUTER JOIN PREEXAMINATION_DETAIL ED ON P.PREDETAIL_NO = ED.PREDETAIL_NO
+	    LEFT OUTER JOIN EXAMINATION E1 ON ED.EXAMINATION_NO = E1.EXAMINATION_NO
+	    LEFT OUTER JOIN PREDIET DT ON P.PREDETAIL_NO = DT.PREDETAIL_NO
+	    LEFT OUTER JOIN DIET D2 ON DT.DIET_NO = D2.DIET_NO
+	    LEFT OUTER JOIN PREOPERATION PO ON P.PREDETAIL_NO = PO.PREDETAIL_NO
+    	LEFT OUTER JOIN OPERATION O1 ON PO.OPERATION_NO = O1.OPERATION_NO
+	    WHERE C.ADMISSION_NO = #{admissionNo}
+	    ORDER BY P.PREDETAIL_REGDATE ASC
+	</select>
+    
+    <!-- 입원 수납 상태 변경 - 퇴원 처리  -->
+    <update id="updateAdmissionStatus" parameterType="map">
+    	UPDATE admission
+    	   SET admission_status = #{admissionStatus}
+    	   	   , discharge_date = SYSDATE 
+    	WHERE admission_no = #{admissionNo}
+    </update>
+    
+    <!-- 퇴원 완료 처리하면 침상 상태 변경 -->
+    <update id="updateBedStatusAvailable" parameterType="int">
+        UPDATE bed
+           SET bed_status = '001'
+         WHERE bed_no = #{bedNo}
+    </update>
+    
+    <!-- 제증명 수납 완료 처리 - 수납완료(003) -->
+    <update id="updateCertificateStatus" parameterType="map">
+    	UPDATE medical_certificate
+    	   SET medical_certificate_status = '003' 
+    	     , medical_certificate_date = SYSDATE
+    	WHERE medical_certificate_print_no IN
+    	<foreach collection="certPrintNoList" item="printNo" open="(" separator="," close=")">
+    		#{printNo}
+    	</foreach>
+    </update>
+</mapper>

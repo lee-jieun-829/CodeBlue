@@ -1,0 +1,103 @@
+/* 1. 폰트 가져오기 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+
+/* 2. Tailwind 필수 설정 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3. 커스텀 디자인 (HTML <style> 내용 이식) */
+body {
+  font-family: "Pretendard", sans-serif;
+  background-color: #ffffff;
+  /* height: 100vh; React는 부모 요소 영향으로 스크롤이 생길 수 있어 auto 권장 */
+  margin: 0;
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+/* 메뉴 카드 스타일 */
+.app-card {
+  background-color: #e3f2fd;
+  border-radius: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%; /* 반응형 대응 */
+  aspect-ratio: 1 / 1; /* 정사각형 유지 */
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.app-card:hover {
+  transform: translateY(-8px);
+  background-color: #d1e9ff;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+}
+
+.app-icon-box {
+  font-size: 3.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.app-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-label {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #334155;
+}
+
+/* 활성화 초록색 동그라미 */
+.status-dot-small {
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+}
+
+/* 메인 이미지 컨테이너 */
+.main-visual-container {
+  border-radius: 2.5rem;
+  overflow: hidden;
+  width: 100%;
+  height: 320px;
+  box-shadow: 10px 30px 30px -12px rgba(0, 0, 0, 0.1),
+    0 18px 36px -18px rgba(0, 0, 0, 0.1);
+}
+
+.util-btn, .util-btn1 {
+  transition: transform 0.2s;
+}
+
+.util-btn:hover, .util-btn1:hover {
+  transform: scale(1.15);
+}
+
+:root {
+  --color-primary: #155DFC;
+  --color-primary-light: #EFF6FF;
+  --color-success: #10B981;
+  --color-bg-secondary: #F3F4F6;
+  --radius-xl: 1.5rem;
+}
+
+/* 활성화 초록색 동그라미 (사용자 가이드 내용) */
+.status-dot-small {
+  width: 10px;
+  height: 10px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+/* 카드 그림자 (사용자 가이드 내용) */
+.card-elevated {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}

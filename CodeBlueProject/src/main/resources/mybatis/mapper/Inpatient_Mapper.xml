@@ -1,0 +1,649 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.inpatient.mapper.IInpatientMapper">
+
+	<sql id="inpatientSearch">
+		<if test="keyword != null and keyword != ''">
+		    AND (P.PATIENT_NAME LIKE '%' || #{keyword} || '%' 
+		         OR P.PATIENT_NO LIKE #{keyword} || '%')
+		</if>
+		<if test="locationNo != null">
+            AND L.LOCATION_NO = #{locationNo}
+        </if>
+	</sql>
+	
+	<resultMap id="orderMap" type="kr.or.ddit.cpr.vo.OrderListVO">
+	    <id property="patientNo" column="PATIENT_NO"/>
+	    <result property="patientName" column="PATIENT_NAME"/>
+	    <result property="patientGen" column="PATIENT_GEN"/>
+	    <result property="patientAge" column="PATIENT_AGE"/>
+	    <result property="admissionStatus" column="ADMISSION_STATUS"/>
+	    <result property="admissionInsurance" column="ADMISSION_INSURANCE"/>
+	    <result property="roomNo" column="ROOM_NO"/>
+	    <result property="locationName" column="LOCATION_NAME"/>
+	    <result property="employeeName" column="EMPLOYEE_NAME"/>
+	    
+	    <result property="admissionNo" column="ADMISSION_NO" />
+	    <result property="chartNo" column="CHART_NO" />
+	    
+	    <collection property="diet" column="CHART_NO" select="selectDiet" />
+	    <collection property="drug" column="CHART_NO" select="selectDrug" />
+	    <collection property="treatment" column="CHART_NO" select="selectTreatment" />
+	    <collection property="examination" column="CHART_NO" select="selectExamination" />
+	    <collection property="operation" column="CHART_NO" select="selectOperation" />
+		
+	</resultMap>
+	
+	<resultMap id="clinicalDetailMap" type="kr.or.ddit.cpr.vo.ClinicalDetailVO">
+	    <id property="patientNo" column="PATIENT_NO"/>
+	    <result property="patientName" column="PATIENT_NAME"/>
+	    <result property="patientGen" column="PATIENT_GEN"/>
+	    <result property="patientAge" column="PATIENT_AGE"/>
+	    <result property="admissionStatus" column="ADMISSION_STATUS"/>
+	    <result property="admissionInsurance" column="ADMISSION_INSURANCE"/>
+	    <result property="roomNo" column="ROOM_NO"/>
+	    <result property="locationName" column="LOCATION_NAME"/>
+	    <result property="employeeName" column="EMPLOYEE_NAME"/>
+	    
+	    <result property="admissionNo" column="ADMISSION_NO" />
+	    <result property="chartNo" column="CHART_NO" />
+	    <result property="preoperationRegdate" column="PREOPERATION_REGDATE" />
+	    
+	    <collection property="progressNotes" column="CHART_NO" select="selectProgressnote" />
+	    <collection property="diagnosis" column="CHART_NO" select="selectDiagnosis" />
+	    <collection property="nursingCharts" column="CHART_NO" select="selectNursingchart" />
+	    <collection property="assessments" column="CHART_NO" select="selectAssessment" />
+	    <collection property="consultations" column="CHART_NO" select="selectConsultantresult" />
+	    
+	    <collection property="diet" column="CHART_NO" select="selectDiet" />
+	    <collection property="drug" column="CHART_NO" select="selectDrug" />
+	    <collection property="treatment" column="CHART_NO" select="selectTreatment" />
+	    <collection property="examination" column="CHART_NO" select="selectExamination" />
+	    <collection property="operation" column="CHART_NO" select="selectOperation" />
+	    
+	    <collection property="fileList" column="CHART_NO" select="selectExamAttachment" />
+	</resultMap>
+
+	<resultMap id="inpatientMap" type="kr.or.ddit.cpr.vo.InpatientVO">
+        <id property="patientNo" column="PATIENT_NO"/>
+        <result property="patientName" column="PATIENT_NAME"/>
+        <result property="patientGen" column="PATIENT_GEN"/>
+        <result property="patientAge" column="PATIENT_AGE"/>
+        <result property="admissionStatus" column="ADMISSION_STATUS"/>
+        <result property="admissionInsurance" column="ADMISSION_INSURANCE"/>
+        <result property="roomNo" column="ROOM_NO"/>
+        <result property="locationName" column="LOCATION_NAME"/>
+        <result property="employeeName" column="EMPLOYEE_NAME"/>
+    </resultMap>
+
+    <select id="selectInpatientList" resultMap="inpatientMap">
+        SELECT
+    		p.patient_no
+		  , p.patient_name
+		  , p.patient_gen
+		  , (EXTRACT(YEAR FROM sysdate) - (
+		        CASE
+		            WHEN substr(p.patient_regno2, 1, 1) IN ( '1', '2' ) THEN
+		                1900
+		            ELSE
+		                2000
+		        END
+		        + TO_NUMBER(substr(p.patient_regno1, 1, 2)) ) + 1 ) AS patient_age
+		  , a.admission_status
+		  , LPAD(a.admission_insurance, 3, '0') AS admission_insurance
+		  , r.room_no
+		  , l.location_name
+		  , e.employee_name
+		FROM
+		    admission a
+		    JOIN patient  p ON a.patient_no = p.patient_no
+		    JOIN bed      b ON a.bed_no = b.bed_no
+		    JOIN room     r ON b.room_no = r.room_no
+		    JOIN location l ON r.location_no = l.location_no
+		    LEFT JOIN chart    c ON a.admission_no = c.admission_no
+		    LEFT JOIN employee e ON a.employee_no = e.employee_no
+        <where>
+            AND a.admission_status != '004'
+            AND a.employee_no = #{employeeNo}
+            <include refid="inpatientSearch" />
+        </where>
+        ORDER BY r.room_no ASC, p.patient_name ASC
+    </select>
+
+	<select id="selectClinicalDetail" resultMap="clinicalDetailMap">
+	    SELECT
+		    a.admission_no
+		  , to_char(a.admission_date, 'YYYY-MM-DD') AS admission_date
+		  , a.admission_status
+		  , p.patient_no
+		  , p.patient_name
+		  , p.patient_gen
+		  , ( EXTRACT(YEAR FROM sysdate) - (
+		        CASE
+		            WHEN substr(p.patient_regno2, 1, 1) IN ( '1', '2' ) THEN
+		                1900
+		            ELSE
+		                2000
+		        END
+		        + TO_NUMBER(substr(p.patient_regno1, 1, 2)) ) + 1 ) AS patient_age
+		  , r.room_no
+		  , l.location_name
+		  , e.employee_name
+		  , c.chart_no AS CHART_NO
+		  , (SELECT
+		            to_char(MAX(op.preoperation_regdate)
+		                  , 'YYYY-MM-DD')
+		        FROM
+		                 preoperation op
+		            JOIN predetail pd ON op.predetail_no = pd.predetail_no
+		            JOIN chart     c2 ON pd.chart_no = c2.chart_no
+		        WHERE
+		            c2.admission_no = a.admission_no) AS preoperation_regdate
+		FROM
+		    admission a
+		    JOIN patient  p ON a.patient_no = p.patient_no
+		    JOIN bed      b ON a.bed_no = b.bed_no
+		    JOIN room     r ON b.room_no = r.room_no
+		    JOIN location l ON r.location_no = l.location_no
+		    LEFT JOIN chart    c ON a.admission_no = c.admission_no
+		    LEFT JOIN employee e ON a.employee_no = e.employee_no
+		WHERE
+		    p.patient_no = #{patientNo}
+		AND a.admission_status != '004'
+	</select>
+	
+	<select id="selectProgressnote" resultType="kr.or.ddit.cpr.vo.ProgressNoteVO">
+	    SELECT
+	        pn.progressnote_no
+	      , pn.progressnote_content
+	      , pn.progressnote_date
+	      , pn.employee_no
+	      , e.employee_name  
+	    FROM
+	        progressnote pn
+	    LEFT JOIN employee e ON pn.employee_no = e.employee_no WHERE
+	        pn.chart_no = #{value}
+	    ORDER BY pn.progressnote_date DESC
+	</select>
+	
+	<select id="selectDiagnosis" resultType="kr.or.ddit.cpr.vo.DiagnosisVO" parameterType="long">
+	    SELECT
+	        d.diagnosis_no
+	      , d.diagnosis_code
+	      , d.diagnosis_name
+	      , dy.diagnosis_detail_yn AS diagnosisDetailYN
+	    FROM
+	        diagnosis d
+	        INNER JOIN diagnosis_detail dy ON dy.diagnosis_no = d.diagnosis_no
+	    WHERE
+	        dy.chart_no = #{chartNo}
+	</select>
+	
+	<select id="selectNursingchart" resultType="kr.or.ddit.cpr.vo.NursingChartVO">
+	    SELECT
+		    nc.nursingchart_no
+		  , nc.nursingchart_content
+		  , nc.nursingchart_date
+		  , nc.nursingchart_pressure
+		  , nc.nursingchart_temperature
+		  , nc.nursingchart_pulse
+		  , e.employee_name
+		FROM
+		    nursingchart nc
+		    LEFT JOIN employee     e ON nc.employee_no = e.employee_no
+		WHERE
+		    nc.chart_no = #{value}
+		ORDER BY NC.NURSINGCHART_DATE DESC
+	</select>
+	
+	<select id="selectAssessment" resultType="kr.or.ddit.cpr.vo.NursingAssessmentVO">
+	    SELECT
+		    nursing_assessment_no
+		  , nursing_assessment_painscore
+		  , nursing_assessment_painsite
+		FROM
+		    nursing_assessment
+		WHERE
+		    chart_no = #{value}
+	</select>
+	
+	<select id="selectConsultantresult" resultType="kr.or.ddit.cpr.vo.ConsultationVO">
+	    SELECT
+		    c.consultation_no
+		  , c.consultation_reqdoctor
+		  , c.consultation_respdoctor
+		  , c.consultation_reqdate
+		  , c.consultation_respdate
+		  , c.consultation_reqcontent
+		  , c.consultation_respcontent
+		  , c.consultation_status
+		  , c.consultation_reason
+		  , c.chart_no
+		  , e1.employee_name AS reqDoctorName  
+		  , e2.employee_name AS respDoctorName
+		FROM
+		    consultation c
+		    LEFT JOIN employee e1 ON c.consultation_reqdoctor = e1.employee_no
+		    LEFT JOIN employee e2 ON c.consultation_respdoctor = e2.employee_no
+		WHERE
+		    c.chart_no = #{value}
+	    ORDER BY C . CONSULTATION_REQDATE DESC
+	</select>
+	
+	<select id="selectOrderList" resultMap="orderMap">
+		SELECT
+		    a.admission_no
+		  , a.admission_status
+		  , a.admission_insurance
+		  , p.patient_no
+		  , p.patient_name
+		  , p.patient_gen
+		  , (EXTRACT(YEAR FROM sysdate) - (
+		        CASE
+		            WHEN substr(p.patient_regno2, 1, 1) IN ( '1', '2' ) THEN
+		                1900
+		            ELSE
+		                2000
+		        END
+		        + TO_NUMBER(substr(p.patient_regno1, 1, 2)) ) + 1 ) AS patient_age
+		  , r.room_no
+		  , l.location_name
+		  , e.employee_name
+		  , c.chart_no
+		FROM
+		    admission a
+		    JOIN patient  p ON a.patient_no = p.patient_no
+		    JOIN bed      b ON a.bed_no = b.bed_no
+		    JOIN room     r ON b.room_no = r.room_no
+		    JOIN location l ON r.location_no = l.location_no
+		    LEFT JOIN chart    c ON a.admission_no = c.admission_no
+		    LEFT JOIN employee e ON a.employee_no = e.employee_no
+		WHERE
+		    p.patient_no = #{patientNo}
+		AND a.admission_status != '004'
+	</select>
+	
+	<select id="selectDiet" resultType="kr.or.ddit.cpr.vo.DietVO">
+	   SELECT
+		    pd.predetail_no     
+		  , m.diet_name         
+		  , pd.predetail_regdate
+		  , d.diet_no           
+		  , d.prediet_status    
+		  , d.prediet_dose      
+		  , d.prediet_freq      
+		  , d.prediet_day       
+		FROM
+		    predetail pd
+		    INNER JOIN prediet d ON pd.predetail_no = d.predetail_no
+		    INNER JOIN diet    m ON d.diet_no = m.diet_no
+		WHERE
+		    pd.chart_no = #{value}
+		AND pd.predetail_type = '004'
+		AND d.prediet_status != '004'
+		    order by pd.predetail_regdate desc
+	</select>
+	
+ 	<select id="selectDrug" resultType="kr.or.ddit.cpr.vo.DrugVO">
+		SELECT
+		    pd.predetail_no         
+		  , m.drug_name       
+		  , pd.predetail_regdate    
+		  , d.drug_no               
+		  , d.predrug_detail_status 
+		  , d.predrug_detail_dose   
+		  , d.predrug_detail_freq   
+		  , d.predrug_detail_day  
+		  , d.predrug_detail_type  
+		  , m.drug_type    
+		FROM
+		    predetail pd
+		    INNER JOIN predrug_detail d ON pd.predetail_no = d.predetail_no
+		    INNER JOIN drug           m ON d.drug_no = m.drug_no
+		WHERE
+		    pd.chart_no = #{value}
+	    AND pd.predetail_type = '001'
+	    AND d.predrug_detail_status != '004'
+		    order by pd.predetail_regdate desc
+	</select>
+	
+ 	<select id="selectTreatment" resultType="kr.or.ddit.cpr.vo.TreatmentVO">
+		SELECT
+		    pd.predetail_no         
+		  , m.treatment_name       
+		  , pd.predetail_regdate    
+		  , t.treatment_no               
+		  , t.pretreatment_detail_status 
+		  , t.pretreatment_detail_dose   
+		  , t.pretreatment_detail_freq   
+		  , t.pretreatment_detail_day    
+		FROM
+		    predetail pd
+		    INNER JOIN pretreatment_detail t ON pd.predetail_no = t.predetail_no
+		    INNER JOIN treatment           m ON t.treatment_no = m.treatment_no
+		WHERE
+		    pd.chart_no = #{value}
+	    AND pd.predetail_type = '003'
+	    AND	t.pretreatment_detail_status != '004'
+		    order by pd.predetail_regdate desc
+	</select>
+	
+ 	<select id="selectExamination" resultType="kr.or.ddit.cpr.vo.ExaminationVO">
+		SELECT
+		    pd.predetail_no         
+		  , m.examination_name       
+		  , TO_CHAR(pd.predetail_regdate, 'YYYY-MM-DD') as predetail_regdate    
+		  , e.examination_no               
+		  , e.preexamination_detail_status 
+		  , e.preexamination_detail_site   
+		  , e.preexamination_detail_freq   
+		  , e.preexamination_detail_day
+		  , e.preexamination_detail_laterality
+		  , ad.attachment_detail_path
+          , ad.attachment_detail_name    
+          , ad.attachment_detail_no    
+		FROM
+		    predetail pd
+		    INNER JOIN preexamination_detail e ON pd.predetail_no = e.predetail_no
+		    INNER JOIN examination           m ON e.examination_no = m.examination_no
+		    LEFT JOIN attachment_detail ad ON e.attachment_no = ad.attachment_no
+		WHERE
+		    pd.chart_no = #{value}
+	    AND pd.predetail_type = '002'
+	    AND e.preexamination_detail_status != '004'
+		    order by pd.predetail_regdate desc
+	</select>
+	
+ 	<select id="selectOperation" resultType="kr.or.ddit.cpr.vo.OperationVO">
+		SELECT
+		    pd.predetail_no         
+		  , m.operation_name       
+		  , o.preoperation_regdate    
+		  , o.operation_no               
+		  , o.preoperation_status
+		  , e.employee_name AS employeeName   
+		FROM
+		    predetail pd
+		    INNER JOIN preoperation o ON pd.predetail_no = o.predetail_no
+		    INNER JOIN operation    m ON o.operation_no = m.operation_no
+		    LEFT JOIN employee e ON o.employee_no = e.employee_no
+		WHERE
+		    pd.chart_no = #{value}
+	    AND pd.predetail_type = '005'
+		    order by pd.predetail_regdate desc
+	</select>
+	
+	<select id="searchOrder" parameterType="map" resultType="kr.or.ddit.cpr.vo.OrderSearchVO">
+	SELECT
+		<choose>
+			<when test="category == 'DIAG'">
+                DIAGNOSIS_NO AS itemNo 
+              , DIAGNOSIS_NAME AS itemName
+              , 'DIAG' AS categoryCode
+            </when>
+            <when test="category == '001'">
+                DRUG_NO AS itemNo 
+              , DRUG_NAME AS itemName
+              , '001' AS categoryCode
+              , DRUG_TYPE AS drugType
+            </when>
+            <when test="category == '002'">
+                EXAMINATION_NO AS itemNo 
+              , EXAMINATION_NAME AS itemName
+              , '002' AS categoryCode
+            </when>
+            <when test="category == '003'">
+                TREATMENT_NO AS itemNo 
+              , TREATMENT_NAME AS itemName
+              , '003' AS categoryCode
+            </when>
+            <when test="category == '004'">
+                DIET_NO AS itemNo 
+              , DIET_NAME AS itemName
+              , '004' AS categoryCode
+            </when>
+            <otherwise>
+                OPERATION_NO AS itemNo 
+              , OPERATION_NAME AS itemName
+              , '005' AS categoryCode
+            </otherwise>
+        </choose>
+    FROM
+    	<choose>
+    		<when test="category == 'DIAG'"> DIAGNOSIS </when>
+            <when test="category == '001'"> DRUG </when>
+            <when test="category == '002'"> EXAMINATION </when>
+            <when test="category == '003'"> TREATMENT </when>
+            <when test="category == '004'"> DIET </when>
+            <otherwise >OPERATION</otherwise>
+        </choose>
+    WHERE
+    	<choose>
+    		<when test="category == 'DIAG'"> 
+                DIAGNOSIS_NAME LIKE '%' || #{keyword} || '%' 
+                OR DIAGNOSIS_CODE LIKE '%' || #{keyword} || '%' 
+            </when>
+            <when test="category == '001'"> DRUG_NAME LIKE '%' || #{keyword} || '%' </when>
+            <when test="category == '002'"> EXAMINATION_NAME LIKE '%' || #{keyword} || '%' </when>
+            <when test="category == '003'"> TREATMENT_NAME LIKE '%' || #{keyword} || '%' </when>
+            <when test="category == '004'"> DIET_NAME LIKE '%' || #{keyword} || '%' </when>
+            <otherwise >OPERATION_NAME LIKE '%' || #{keyword} || '%' </otherwise>
+        </choose>
+	</select>
+	
+	<insert id="insertProgressNote" parameterType="kr.or.ddit.cpr.vo.ProgressNoteVO">
+		INSERT INTO PROGRESSNOTE (
+	        PROGRESSNOTE_NO 
+	      , PROGRESSNOTE_CONTENT 
+	      , PROGRESSNOTE_DATE 
+	      , EMPLOYEE_NO
+	      , CHART_NO               
+	    ) VALUES (
+	        SEQ_PROGRESSNOTE.NEXTVAL 
+	      , #{progressnoteContent} 
+	      , SYSDATE 
+	      , #{employeeNo}
+	      , #{chartNo}            
+	    )
+	</insert>
+	
+	<insert id="insertPreDetail" parameterType="kr.or.ddit.cpr.vo.PredetailVO">
+	    <selectKey keyProperty="predetailNo" resultType="int" order="BEFORE">
+	        SELECT SEQ_PREDETAIL.NEXTVAL FROM DUAL
+	    </selectKey>
+	    INSERT INTO PREDETAIL (
+	        PREDETAIL_NO 
+	      , PREDETAIL_REGDATE 
+	      , PREDETAIL_TYPE 
+	      , CHART_NO 
+	      , PREDETAIL_STATUS
+	    ) VALUES (
+	        #{predetailNo} 
+	      , SYSDATE 
+	      , #{predetailType} 
+	      , #{chartNo}
+	      , 'Y' 
+	    )
+	</insert>
+	
+	<insert id="insertDiagnosisDetail" parameterType="map">
+	    INSERT INTO DIAGNOSIS_DETAIL (
+	        DIAGNOSIS_NO
+	      , CHART_NO
+	      , DIAGNOSIS_DETAIL_YN 
+	    ) VALUES (
+	        #{diagnosisNo}
+	      , #{chartNo}
+	      , #{diagnosisDetailYN}
+	    )
+	</insert>
+	
+	<insert id="insertPreDrug" parameterType="kr.or.ddit.cpr.vo.DrugVO">
+	    INSERT INTO PREDRUG_DETAIL (
+	        DRUG_NO 
+	      , PREDETAIL_NO 
+	      , PREDRUG_DETAIL_DOSE 
+	      , PREDRUG_DETAIL_FREQ 
+	      , PREDRUG_DETAIL_DAY 
+	      , PREDRUG_DETAIL_METHOD 
+	      , PREDRUG_DETAIL_TYPE
+	      , PREDRUG_DETAIL_STATUS   
+	    ) VALUES (
+	        #{drugNo} 
+	      , #{predetailNo} 
+	      , #{predrugDetailDose} 
+	      , #{predrugDetailFreq} 
+	      , #{predrugDetailDay} 
+	      , #{predrugDetailMethod} 
+	      , #{predrugDetailType} 
+	      , '002'
+	    )
+	</insert>
+	
+	<insert id="insertPreExamination" parameterType="kr.or.ddit.cpr.vo.ExaminationVO">
+	    INSERT INTO PREEXAMINATION_DETAIL (
+	    	PREEXAMINATION_NO
+	      , PREDETAIL_NO 
+	      , EXAMINATION_NO 
+	      , PREEXAMINATION_DETAIL_FREQ 
+	      , PREEXAMINATION_DETAIL_DAY 
+	      , PREEXAMINATION_DETAIL_SITE
+	      , PREEXAMINATION_DETAIL_LATERALITY
+	      , PREEXAMINATION_DETAIL_STATUS
+	    ) VALUES (
+	    	SEQ_PREEXAMINATION_DETAIL.NEXTVAL
+	      , #{predetailNo} 
+	      , #{examinationNo} 
+	      , #{preexaminationDetailFreq} 
+	      , #{preexaminationDetailDay} 
+	      , #{preexaminationDetailSite}
+	      , #{preexaminationDetailLaterality}
+	      , '002'
+	    )
+	</insert>
+	
+	<insert id="insertPreTreatment" parameterType="kr.or.ddit.cpr.vo.TreatmentVO">
+	    INSERT INTO PRETREATMENT_DETAIL (
+	        PREDETAIL_NO 
+	      , TREATMENT_NO 
+	      , PRETREATMENT_DETAIL_DOSE
+	      , PRETREATMENT_DETAIL_FREQ 
+	      , PRETREATMENT_DETAIL_DAY
+	      , PRETREATMENT_DETAIL_STATUS
+	    ) VALUES (
+	        #{predetailNo} 
+	      , #{treatmentNo} 
+	      , #{pretreatmentDetailDose} 
+	      , #{pretreatmentDetailFreq} 
+	      , #{pretreatmentDetailDay}
+	      , '002'
+	    )
+	</insert>
+	
+	<insert id="insertPreDiet" parameterType="kr.or.ddit.cpr.vo.DietVO">
+	    INSERT INTO PREDIET (
+	        PREDETAIL_NO 
+	      , DIET_NO 
+	      , PREDIET_DOSE 
+	      , PREDIET_FREQ 
+	      , PREDIET_DAY 
+	      , PREDIET_STATUS
+	    ) VALUES (
+	        #{predetailNo} 
+	      , #{dietNo} 
+	      , #{predietDose}
+	      , #{predietFreq} 
+	      , #{predietDay}
+	      , '001'
+	    )
+	</insert>
+	
+	<insert id="insertPreOperation" parameterType="map">
+	    INSERT INTO PREOPERATION (
+	        PREDETAIL_NO 
+	      , OPERATION_NO 
+	      , PREOPERATION_REGDATE
+	      , EMPLOYEE_NO
+	      , PREOPERATION_STATUS 
+	    ) VALUES (
+	        #{predetailNo} 
+	      , #{operationNo} 
+	      , SYSDATE 
+	      , #{employeeNo} 
+	      , '001'
+	    )
+	</insert>
+		
+	<update id="updatePreStatusDC" parameterType="map">
+		UPDATE
+			<choose>
+				<when test="categoryCode == '001'">PREDRUG_DETAIL</when>
+				<when test="categoryCode == '002'">PREEXAMINATION_DETAIL</when>
+				<when test="categoryCode == '003'">PRETREATMENT_DETAIL</when>
+				<when test="categoryCode == '004'">PREDIET</when>
+			</choose>
+		SET
+			<choose>
+				<when test="categoryCode == '001'">PREDRUG_DETAIL_STATUS = '004'</when>
+				<when test="categoryCode == '002'">PREEXAMINATION_DETAIL_STATUS = '004'</when>
+				<when test="categoryCode == '003'">PRETREATMENT_DETAIL_STATUS = '004'</when>
+				<when test="categoryCode == '004'">PREDIET_STATUS = '004'</when>
+			</choose>
+		WHERE PREDETAIL_NO = #{predetailNo}
+      	AND <choose>
+	        	<when test="categoryCode == '001'">DRUG_NO</when>
+	        	<when test="categoryCode == '002'">EXAMINATION_NO</when>
+	        	<when test="categoryCode == '003'">TREATMENT_NO</when>
+	        	<when test="categoryCode == '004'">DIET_NO</when>
+	        </choose> = #{itemNo}
+	</update>
+	
+	<update id="updatePreOperationStatus" parameterType="map">
+	    UPDATE PREOPERATION
+	    SET 
+	        PREOPERATION_STATUS = '001'
+	      , PREOPERATION_REGDATE = SYSDATE
+	      ,  EMPLOYEE_NO = #{employeeNo}
+	    WHERE PREDETAIL_NO = #{predetailNo}
+	      AND OPERATION_NO = #{operationNo}
+	</update>
+		
+	<select id="selectExamAttachment" resultType="kr.or.ddit.cpr.vo.AttachmentDetailVO">
+		SELECT 
+	        AD.ATTACHMENT_DETAIL_NO
+	      , AD.ATTACHMENT_DETAIL_PATH
+	      , AD.ATTACHMENT_DETAIL_NAME
+	      , TO_CHAR(PD.PREDETAIL_REGDATE, 'YYYY-MM-DD') AS PREDETAIL_REGDATE
+	    FROM PREDETAIL PD
+	    JOIN PREEXAMINATION_DETAIL PED ON PD.PREDETAIL_NO = PED.PREDETAIL_NO
+	    JOIN ATTACHMENT_DETAIL AD ON PED.ATTACHMENT_NO = AD.ATTACHMENT_NO
+	    WHERE PD.CHART_NO = #{chartNo}
+	    AND PD.PREDETAIL_TYPE = '002'
+	</select>
+
+	<update id="updateDischarge" parameterType="map">
+		UPDATE ADMISSION
+		SET
+			ADMISSION_STATUS = '002'
+		WHERE
+			PATIENT_NO = #{patientNo}
+		AND ADMISSION_STATUS = '001'
+	</update>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.certificate.mapper.IReceptionCertificateMapper">
+	
+	<!-- 증명서 내역 조회 -->
+	<select id="selectMedicalCertificateList" parameterType="int" resultType="map">
+		SELECT 
+	          mc.medical_certificate_print_no
+	        , c.certificate_name
+	        , c.certificate_code
+	        , TO_CHAR(mc.medical_certificate_date, 'YYYY-MM-DD') AS medical_certificate_date
+	        , mc.medical_certificate_status
+	        , c.certificate_price
+	    FROM medical_certificate mc
+	    JOIN certificate c ON mc.certificate_no = c.certificate_no
+	    JOIN chart ch ON mc.chart_no = ch.chart_no
+	    WHERE ch.patient_no = #{patientNo}
+	    ORDER BY mc.medical_certificate_date DESC
+	</select>
+	
+	<!-- 증명서 발급 요청 -->
+	 <insert id="insertCertificateRequest" parameterType="map">
+	    <selectKey keyProperty="next_seq" resultType="string" order="BEFORE">
+	        SELECT LPAD(seq_certificate.NEXTVAL, 2, '0') FROM DUAL
+	    </selectKey>
+	
+	    INSERT INTO medical_certificate (
+	          medical_certificate_print_no
+	        , chart_no
+	        , medical_certificate_status
+	        , certificate_no
+	        , medical_certificate_date
+	    ) VALUES (
+	          #{certificateType} || '-' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '-' || #{next_seq}
+	        , (SELECT chart_no FROM chart WHERE patient_no = #{patientNo} AND ROWNUM = 1)
+	        , '001'
+	        , (SELECT certificate_no FROM certificate WHERE certificate_code = #{certificateType})
+	        , SYSDATE
+	    )
+	</insert>
+	
+	<!-- 증명서 상세 조회 -->
+	<select id="selectCertificateDetail" parameterType="string" resultType="map">
+	    SELECT 
+	          mc.chart_no AS CHART_NO
+	        , mc.medical_certificate_print_no AS MEDICAL_CERTIFICATE_PRINT_NO
+	        /* CLOB 데이터는 DBMS_LOB.SUBSTR 처리를 해야 텍스트로 보임 */
+	        , DBMS_LOB.SUBSTR(mc.medical_certificate_content, 4000, 1) AS MEDICAL_CERTIFICATE_CONTENT
+	        , TO_CHAR(mc.medical_certificate_date, 'YYYY-MM-DD') AS MEDICAL_CERTIFICATE_DATE
+	        , mc.medical_certificate_purpose AS MEDICAL_CERTIFICATE_PURPOSE
+	        , DBMS_LOB.SUBSTR(mc.medical_certificate_remark, 4000, 1) AS MEDICAL_CERTIFICATE_REMARK
+	        , mc.medical_certificate_status AS MEDICAL_CERTIFICATE_STATUS
+	        /* 발병일, 진단일 추가 */
+	        , TO_CHAR(mc.medical_certificate_onset, 'YYYY-MM-DD') AS MEDICAL_CERTIFICATE_ONSET
+	        , TO_CHAR(mc.medical_certificate_diagnosis, 'YYYY-MM-DD') AS MEDICAL_CERTIFICATE_DIAGNOSIS
+	        /* 환자 정보(주소, 연락처) 추가 */
+	        , p.patient_name AS PATIENT_NAME
+	        , p.patient_regno1 AS PATIENT_REGNO1
+	        , p.patient_addr1 AS PATIENT_ADDR1
+	        , p.patient_addr2 AS PATIENT_ADDR2
+	        , p.patient_tel AS PATIENT_TEL
+	        /* 증명서 및 병원 정보 추가 */
+	        , ct.certificate_name AS CERTIFICATE_NAME
+	        , h.hospital_name AS HOSPITAL_NAME
+	        , h.hospital_addr AS HOSPITAL_ADDR
+	        /* 의사 정보 */
+	        , e.employee_name AS EMPLOYEE_NAME
+	        , e.employee_detail_licence AS EMPLOYEE_DETAIL_LICENCE
+	    FROM medical_certificate mc
+	    JOIN chart c ON mc.chart_no = c.chart_no
+	    JOIN patient p ON c.patient_no = p.patient_no
+	    JOIN certificate ct ON mc.certificate_no = ct.certificate_no
+	    JOIN employee e ON c.employee_no = e.employee_no
+	    LEFT JOIN hospital h ON h.hospital_no = 1 
+	    WHERE mc.medical_certificate_print_no = #{printNo} 
+	</select>
+	
+	<!-- 특정 차트의 상병 리스트 조회 -->
+	<select id="selectDiagnosisList" parameterType="int" resultType="kr.or.ddit.cpr.vo.DiagnosisVO">
+	    SELECT 
+	          d.diagnosis_code AS diagnosisCode
+	        , d.diagnosis_name AS diagnosisName
+	        , dd.diagnosis_detail_yn AS diagnosisDetailYN
+	    FROM diagnosis_detail dd
+	    JOIN diagnosis d ON dd.diagnosis_no = d.diagnosis_no
+	    WHERE dd.chart_no = #{chartNo}
+	</select>
+	
+	<!-- 증명서 발급 요청 해당 환자 담당의 사번 조회 -->
+	<select id="selectCurrentDoctorNo" parameterType="int" resultType="int">
+		SELECT employee_no
+        FROM (
+            SELECT employee_no
+            FROM registration
+            WHERE patient_no = #{patientNo}
+            ORDER BY registration_regdate DESC
+        )
+        WHERE ROWNUM = 1
+	</select>
+</mapper>

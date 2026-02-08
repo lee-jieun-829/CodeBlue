@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.ai.mapper.IAiMapper">
+	<resultMap type="kr.or.ddit.cpr.vo.aiVO" id="aiMap">
+		<result property="aiNo" column="AI_NO"/>
+		<result property="aiContent" column="AI_CONTENT"/>
+		<result property="aiDate" column="AI_DATE"/>
+		<result property="chartNo" column="CHART_NO"/>
+		<result property="patientNo" column="PATIENT_NO"/>
+		
+		<collection property="aiDrug" column="AI_NO" 
+                    javaType="java.util.List" ofType="kr.or.ddit.cpr.vo.AiDrugVO"
+                    select="aiDrug" />
+
+        <collection property="aiDiagnosis" column="AI_NO" 
+                    javaType="java.util.List" ofType="kr.or.ddit.cpr.vo.AiDiagnosisVO"
+                    select="aiDiagnosis" />
+		
+	</resultMap>
+	 
+	<select id="aiSelect" parameterType="String" resultMap="aiMap">
+        SELECT 
+            AI_NO, AI_CONTENT, AI_DATE, CHART_NO, PATIENT_NO
+        FROM AI
+        WHERE PATIENT_NO = #{patientNo}
+        ORDER BY AI_DATE DESC
+        </select>
+
+
+    <select id="aiDrug" parameterType="String" resultType="kr.or.ddit.cpr.vo.AiDrugVO">
+        SELECT 
+            AI_DRUG_NO, AI_DRUG_CODE, AI_DRUG_NAME, AI_DRUG_DOSE
+        FROM AI_DRUG
+        WHERE AI_NO = #{aiNo}
+    </select>
+
+
+    <select id="aiDiagnosis" parameterType="String" resultType="kr.or.ddit.cpr.vo.AiDiagnosisVO">
+        SELECT 
+            AI_DIAGNOSIS_NO, AI_DIAGNOSIS_CODE, AI_DIAGNOSIS_NAME
+        FROM AI_DIAGNOSIS
+        WHERE AI_NO = #{aiNo}
+    </select>
+	
+
+    <select id="searchDiseaseByKeywords" resultType="kr.or.ddit.cpr.vo.aifunVO">
+        SELECT 
+        	DIAGNOSIS_NO as diagnosisNo,
+            DIAGNOSIS_CODE as diagnosisCode,
+            DIAGNOSIS_NAME as diagnosisName
+        FROM DIAGNOSIS
+        WHERE 
+        <foreach collection="list" item="keyword" separator="OR">
+            DIAGNOSIS_NAME LIKE '%' || #{keyword} || '%'
+        </foreach>
+    </select>
+    
+    <select id="searchDrugByIngredients" resultType="kr.or.ddit.cpr.vo.aifunVO">
+        SELECT 
+            DRUG_CODE as drugCode,
+            DRUG_NAME as drugName,
+            DRUG_SPEC as drugSpec,
+            DRUG_TYPE as drugType,
+            DRUG_NO as drugNo,
+            DRUG_COMPANY as drugCompany
+            
+        FROM DRUG
+        WHERE 
+        <foreach collection="list" item="ing" separator="OR">
+            DRUG_NAME LIKE '%' || #{ing} || '%'
+        </foreach>
+        and DRUG_TYPE = '내복'
+    </select>
+    
+    
+    <insert id="aiInsert" parameterType="kr.or.ddit.cpr.vo.aiVO">
+        <selectKey keyProperty="aiNo" resultType="int" order="BEFORE">
+            SELECT SEQ_AI.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO AI (
+            AI_NO, AI_CONTENT, AI_DATE, CHART_NO, PATIENT_NO
+        ) VALUES (
+            #{aiNo}, #{aiContent}, SYSDATE, #{chartNo}, #{patientNo}
+        )
+    </insert>
+    
+    <insert id="insertAiDiagnosis" parameterType="kr.or.ddit.cpr.vo.AiDiagnosisVO">
+    	<selectKey keyProperty="aiDiagnosisNo" resultType="int" order="BEFORE">
+            SELECT SEQ_AI_DIAGNOSIS.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO AI_DIAGNOSIS (
+            AI_DIAGNOSIS_NO, AI_DIAGNOSIS_CODE, AI_DIAGNOSIS_NAME, AI_NO
+        ) VALUES (
+           	#{aiDiagnosisNo},             
+            #{aiDiagnosisCode}, 
+            #{aiDiagnosisName}, 
+            #{aiNo}
+        )
+    </insert>
+
+    <insert id="insertAiDrug" parameterType="kr.or.ddit.cpr.vo.AiDrugVO">
+    	<selectKey keyProperty="aiDrugNo" resultType="int" order="BEFORE">
+            SELECT SEQ_AI_DRUG.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO AI_DRUG (
+            AI_DRUG_NO, AI_DRUG_CODE, AI_DRUG_NAME, 
+            AI_DRUG_DOSE, AI_NO
+        ) VALUES (
+            #{aiDrugNo}, 
+            #{aiDrugCode}, 
+            #{aiDrugName}, 
+            #{aiDrugDose},
+            #{aiNo}
+        )
+    </insert>
+    
+   
+
+	<!-- 아래 안씀!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+	<select id="searchDiagnosis" parameterType="kr.or.ddit.cpr.vo.aifunVO" resultType="kr.or.ddit.cpr.vo.aifunVO">
+	        SELECT * FROM (
+	            SELECT 
+	                DIAGNOSIS_CODE AS diagnosisCode, 
+	                DIAGNOSIS_NAME AS diagnosisName 
+	            FROM DIAGNOSIS 
+	            WHERE DIAGNOSIS_NAME LIKE '%' || #{searchKeyword} || '%'
+	            ORDER BY LENGTH(DIAGNOSIS_NAME) ASC
+	        ) WHERE ROWNUM = 1
+	 </select>
+
+    <select id="searchDrugs" parameterType="kr.or.ddit.cpr.vo.aifunVO" resultType="kr.or.ddit.cpr.vo.aifunVO">
+        SELECT * FROM (
+            SELECT 
+                DRUG_CODE AS drugCode, 
+                DRUG_CODE AS drugName, 
+                DRUG_TYPE AS drugType, 
+                DRUG_SPEC AS drugSpec                
+            FROM DRUG 
+            WHERE DRUG_NAME LIKE '%' || #{searchKeyword} || '%'
+        ) WHERE ROWNUM &lt;= 2 
+    </select>
+    <select id="searchTreatments" parameterType="kr.or.ddit.cpr.vo.aifunVO" resultType="kr.or.ddit.cpr.vo.aifunVO">
+        SELECT * FROM (
+            SELECT 
+                TREATMENT_CODE AS treatmentCode, 
+                TREATMENT_NAME AS treatmentName 
+            FROM TREATMENT 
+            WHERE TREATMENT_NAME LIKE '%' || #{searchKeyword} || '%'
+        ) WHERE ROWNUM = 1
+    </select>
+</mapper>

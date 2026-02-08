@@ -1,0 +1,274 @@
+@charset "UTF-8";
+
+/* =========================================================
+   * icon.css
+   * auth : Been Daye
+   * date : 2025-12-29
+   * desc : icon 공통 css
+   ========================================================= */
+
+/* =========================================================
+	[사용방법]
+	-------------------------------------------------------
+	<i class="icon icon-사이즈 icon-색상 icon-파일명"></i>
+	-------------------------------------------------------
+	필수 입력 클래스 : icon, icon-파일명
+	선택 입력 클래스 : icon-사이즈, icon-색상
+   ========================================================= */
+
+
+/* 1) Size options (12/16/20/24/32px -> rem/token based) */
+.icon-xs { --icon-size: 0.75rem; }      	/* 12px */
+.icon-sm { --icon-size: 1rem; }      	/* 16px */
+.icon-md { --icon-size: 1.25rem; }     	/* 20px */
+.icon-lg { --icon-size: 1.5rem; }   		/* 24px */
+.icon-xl { --icon-size: 2rem; }   		/* 32px */
+.icon-king { --icon-size: 4rem; }		/* 큰사이즈 */
+
+/* 2) Base */
+i.icon {
+  display: inline-block;
+  vertical-align: -0.125em;
+  flex: 0 0 auto;
+
+  /* default size = 16px */
+  width: var(--icon-size, 1rem);
+  height: var(--icon-size, 1rem);
+
+  /* default color = currentColor */
+  background-color: var(--icon-color, currentColor);
+
+  /* mask 기반 아이콘 */
+  -webkit-mask-image: var(--icon-src);
+  mask-image: var(--icon-src);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* 3) Color options */
+.icon-muted   { --icon-color: var(--color-secondary, #6B7280); }
+.icon-primary { --icon-color: var(--color-primary, #155DFC); }
+.icon-success { --icon-color: var(--color-success, #10B981); }
+.icon-warning { --icon-color: var(--color-warning, #F59E0B); }
+.icon-danger  { --icon-color: var(--color-danger,  #EF4444); }
+.icon-info    { --icon-color: var(--color-info,    #3B82F6); }
+
+/* 4) (선택) 아이콘+텍스트 기본 간격 */
+.icon + span:not(.sidebar-nav-label),
+.icon + .label { margin-left: 0.375rem; }
+
+/* A */
+.icon-activity-square { --icon-src: url("../../images/icon/activity-square.svg"); }
+.icon-activity { --icon-src: url("../../images/icon/activity.svg"); }
+.icon-add-queue { --icon-src: url("../../images/icon/add-queue.svg"); }
+.icon-alarm { --icon-src: url("../../images/icon/alarm.svg"); }
+.icon-archive { --icon-src: url("../../images/icon/archive.svg"); }
+.icon-arrow-diagonal-one { --icon-src: url("../../images/icon/arrow-diagonal-one.svg"); }
+.icon-arrow-diagonal-two { --icon-src: url("../../images/icon/arrow-diagonal-two.svg"); }
+.icon-arrow-down-left { --icon-src: url("../../images/icon/arrow-down-left.svg"); }
+.icon-arrow-down-right { --icon-src: url("../../images/icon/arrow-down-right.svg"); }
+.icon-arrow-down { --icon-src: url("../../images/icon/arrow-down.svg"); }
+.icon-arrow-left-right { --icon-src: url("../../images/icon/arrow-left-right.svg"); }
+.icon-arrow-left { --icon-src: url("../../images/icon/arrow-left.svg"); }
+.icon-arrow-right-circle { --icon-src: url("../../images/icon/arrow-right-circle.svg"); }
+.icon-arrow-right { --icon-src: url("../../images/icon/arrow-right.svg"); }
+.icon-arrow-up-circle { --icon-src: url("../../images/icon/arrow-up-circle.svg"); }
+.icon-arrow-up-down { --icon-src: url("../../images/icon/arrow-up-down.svg"); }
+.icon-arrow-up-left-circle { --icon-src: url("../../images/icon/arrow-up-left-circle.svg"); }
+.icon-arrow-up-left { --icon-src: url("../../images/icon/arrow-up-left.svg"); }
+.icon-arrow-up-right-circle { --icon-src: url("../../images/icon/arrow-up-right-circle.svg"); }
+.icon-arrow-up-right { --icon-src: url("../../images/icon/arrow-up-right.svg"); }
+.icon-arrow-up { --icon-src: url("../../images/icon/arrow-up.svg"); }
+.icon-at { --icon-src: url("../../images/icon/at.svg"); }
+
+/* B */
+.icon-bell { --icon-src: url("../../images/icon/bell.svg"); }
+.icon-bed { --icon-src: url("../../images/icon/bed.svg"); }
+.icon-bookmark { --icon-src: url("../../images/icon/bookmark.svg"); }
+.icon-box { --icon-src: url("../../images/icon/box.svg"); }
+
+/* C */
+.icon-calendar { --icon-src: url("../../images/icon/calendar.svg"); }
+.icon-calendar-check { --icon-src: url("../../images/icon/calendar-check.svg"); }
+.icon-cart-minus { --icon-src: url("../../images/icon/cart-minus.svg"); }
+.icon-cart-plus { --icon-src: url("../../images/icon/cart-plus.svg"); }
+.icon-cart-x { --icon-src: url("../../images/icon/cart-x.svg"); }
+.icon-cart { --icon-src: url("../../images/icon/cart.svg"); }
+.icon-chart-bar-two { --icon-src: url("../../images/icon/chart-bar-two.svg"); }
+.icon-chart-graph { --icon-src: url("../../images/icon/chart-graph.svg"); }
+.icon-chart-line { --icon-src: url("../../images/icon/chart-line.svg"); }
+.icon-chart-pie-two { --icon-src: url("../../images/icon/chart-pie-two.svg"); }
+.icon-chat-check { --icon-src: url("../../images/icon/chat-check.svg"); }
+.icon-chat-dots { --icon-src: url("../../images/icon/chat-dots.svg"); }
+.icon-chat-messages { --icon-src: url("../../images/icon/chat-messages.svg"); }
+.icon-chat-minus { --icon-src: url("../../images/icon/chat-minus.svg"); }
+.icon-chat-plus { --icon-src: url("../../images/icon/chat-plus.svg"); }
+.icon-chat-x { --icon-src: url("../../images/icon/chat-x.svg"); }
+.icon-chat { --icon-src: url("../../images/icon/chat.svg"); }
+.icon-check-circle-one { --icon-src: url("../../images/icon/check-circle-one.svg"); }
+.icon-check-circle { --icon-src: url("../../images/icon/check-circle.svg"); }
+.icon-check-hexagon { --icon-src: url("../../images/icon/check-hexagon.svg"); }
+.icon-check { --icon-src: url("../../images/icon/check.svg"); }
+.icon-chevron-down { --icon-src: url("../../images/icon/chevron-down.svg"); }
+.icon-chevron-left-circle { --icon-src: url("../../images/icon/chevron-left-circle.svg"); }
+.icon-chevron-left { --icon-src: url("../../images/icon/chevron-left.svg"); }
+.icon-chevron-right-circle { --icon-src: url("../../images/icon/chevron-right-circle.svg"); }
+.icon-chevron-right { --icon-src: url("../../images/icon/chevron-right.svg"); }
+.icon-chevron-up-circle { --icon-src: url("../../images/icon/chevron-up-circle.svg"); }
+.icon-chevron-up-down { --icon-src: url("../../images/icon/chevron-up-down.svg"); }
+.icon-chevron-up { --icon-src: url("../../images/icon/chevron-up.svg"); }
+.icon-click { --icon-src: url("../../images/icon/click.svg"); }
+.icon-clipboard { --icon-src: url("../../images/icon/clipboard.svg"); }
+.icon-code { --icon-src: url("../../images/icon/code.svg"); }
+.icon-corner-down-left { --icon-src: url("../../images/icon/corner-down-left.svg"); }
+.icon-corner-down-right { --icon-src: url("../../images/icon/corner-down-right.svg"); }
+.icon-corner-left-down { --icon-src: url("../../images/icon/corner-left-down.svg"); }
+.icon-corner-left-up { --icon-src: url("../../images/icon/corner-left-up.svg"); }
+.icon-corner-right-down { --icon-src: url("../../images/icon/corner-right-down.svg"); }
+.icon-corner-right-up { --icon-src: url("../../images/icon/corner-right-up.svg"); }
+.icon-corner-up-left { --icon-src: url("../../images/icon/corner-up-left.svg"); }
+.icon-corner-up-right { --icon-src: url("../../images/icon/corner-up-right.svg"); }
+.icon-credit-card { --icon-src: url("../../images/icon/credit-card.svg"); }
+.icon-crop { --icon-src: url("../../images/icon/crop.svg"); }
+.icon-ai { --icon-src: url("../../images/icon/ai.jpg"); }
+
+/* D */
+.icon-danger-circle { --icon-src: url("../../images/icon/danger-circle.svg"); }
+.icon-danger-triangle { --icon-src: url("../../images/icon/danger-triangle.svg"); }
+.icon-database { --icon-src: url("../../images/icon/database.svg"); }
+.icon-delete { --icon-src: url("../../images/icon/delete.svg"); }
+.icon-desktop { --icon-src: url("../../images/icon/desktop.svg"); }
+.icon-dots-circle { --icon-src: url("../../images/icon/dots-circle.svg"); }
+.icon-dots-vertical-circle { --icon-src: url("../../images/icon/dots-vertical-circle.svg"); }
+.icon-dots-vertical { --icon-src: url("../../images/icon/dots-vertical.svg"); }
+.icon-dots { --icon-src: url("../../images/icon/dots.svg"); }
+.icon-download { --icon-src: url("../../images/icon/download.svg"); }
+.icon-doctor { --icon-src: url("../../images/icon/doctor.svg");}
+.icon-doctor-bag { --icon-src: url("../../images/icon/doctor-bag.svg");}
+.icon-drug { --icon-src: url("../../images/icon/drug.svg"); }
+
+/* E */
+.icon-edit-one { --icon-src: url("../../images/icon/edit-one.svg"); }
+.icon-edit { --icon-src: url("../../images/icon/edit.svg"); }
+.icon-envelope { --icon-src: url("../../images/icon/envelope.svg"); }
+.icon-external-link { --icon-src: url("../../images/icon/external-link.svg"); }
+.icon-eye-slash { --icon-src: url("../../images/icon/eye-slash.svg"); }
+.icon-eye { --icon-src: url("../../images/icon/eye.svg"); }
+
+/* F */
+.icon-file-text { --icon-src: url("../../images/icon/file-text.svg"); }
+.icon-file-x { --icon-src: url("../../images/icon/file-x.svg"); }
+.icon-file { --icon-src: url("../../images/icon/file.svg"); }
+.icon-filter-one { --icon-src: url("../../images/icon/filter-one.svg"); }
+.icon-fine-tune { --icon-src: url("../../images/icon/fine-tune.svg"); }
+.icon-folder-plus { --icon-src: url("../../images/icon/folder-plus.svg"); }
+.icon-folder-two { --icon-src: url("../../images/icon/folder-two.svg"); }
+.icon-folder { --icon-src: url("../../images/icon/folder.svg"); }
+
+/* H */
+.icon-home { --icon-src: url("../../images/icon/home.svg"); }
+
+/* I */
+.icon-image { --icon-src: url("../../images/icon/image.svg"); }
+.icon-indifferent-circle { --icon-src: url("../../images/icon/indifferent-circle.svg"); }
+.icon-info-circle { --icon-src: url("../../images/icon/info-circle.svg"); }
+.icon-info-square { --icon-src: url("../../images/icon/info-square.svg"); }
+.icon-info-triangle { --icon-src: url("../../images/icon/info-triangle.svg"); }
+
+/* L */
+.icon-label { --icon-src: url("../../images/icon/label.svg"); }
+.icon-like { --icon-src: url("../../images/icon/like.svg"); }
+.icon-line-chart-circle { --icon-src: url("../../images/icon/line-chart-circle.svg"); }
+.icon-line-chart-square { --icon-src: url("../../images/icon/line-chart-square.svg"); }
+.icon-link-one { --icon-src: url("../../images/icon/link-one.svg"); }
+.icon-link-two { --icon-src: url("../../images/icon/link-two.svg"); }
+.icon-link { --icon-src: url("../../images/icon/link.svg"); }
+.icon-location { --icon-src: url("../../images/icon/location.svg"); }
+.icon-lock-open { --icon-src: url("../../images/icon/lock-open.svg"); }
+.icon-lock { --icon-src: url("../../images/icon/lock.svg"); }
+.icon-login { --icon-src: url("../../images/icon/login.svg"); }
+.icon-logout { --icon-src: url("../../images/icon/logout.svg"); }
+
+/* M */
+.icon-map { --icon-src: url("../../images/icon/map.svg"); }
+.icon-maximize-one { --icon-src: url("../../images/icon/maximize-one.svg"); }
+.icon-maximize { --icon-src: url("../../images/icon/maximize.svg"); }
+.icon-menu { --icon-src: url("../../images/icon/menu.svg"); }
+.icon-message-dots { --icon-src: url("../../images/icon/message-dots.svg"); }
+.icon-message { --icon-src: url("../../images/icon/message.svg"); }
+.icon-megaphone { --icon-src: url("../../images/icon/megaphone.svg"); }
+.icon-microphone-slash { --icon-src: url("../../images/icon/microphone-slash.svg"); }
+.icon-microphone { --icon-src: url("../../images/icon/microphone.svg"); }
+.icon-minimize-one { --icon-src: url("../../images/icon/minimize-one.svg"); }
+.icon-minus-circle { --icon-src: url("../../images/icon/minus-circle.svg"); }
+.icon-minus { --icon-src: url("../../images/icon/minus.svg"); }
+.icon-move-diagonal-one { --icon-src: url("../../images/icon/move-diagonal-one.svg"); }
+.icon-move-diagonal { --icon-src: url("../../images/icon/move-diagonal.svg"); }
+.icon-move-horizontal { --icon-src: url("../../images/icon/move-horizontal.svg"); }
+.icon-move-vertical { --icon-src: url("../../images/icon/move-vertical.svg"); }
+.icon-move { --icon-src: url("../../images/icon/move.svg"); }
+
+/* N */
+.icon-navigation-one { --icon-src: url("../../images/icon/navigation-one.svg"); }
+
+/* P */
+.icon-package { --icon-src: url("../../images/icon/package.svg"); }
+.icon-paperclip { --icon-src: url("../../images/icon/paperclip.svg"); }
+.icon-pencil { --icon-src: url("../../images/icon/pencil.svg"); }
+.icon-pharmacy { --icon-src: url("../../images/icon/pharmacy.svg"); }
+.icon-pin { --icon-src: url("../../images/icon/pin.svg"); }
+.icon-play { --icon-src: url("../../images/icon/play.svg"); }
+.icon-plus-circle { --icon-src: url("../../images/icon/plus-circle.svg"); }
+.icon-plus-square { --icon-src: url("../../images/icon/plus-square.svg"); }
+.icon-plus { --icon-src: url("../../images/icon/plus.svg"); }
+.icon-power { --icon-src: url("../../images/icon/power.svg"); }
+.icon-printer { --icon-src: url("../../images/icon/printer.svg"); }
+
+/* Q */
+.icon-question-circle { --icon-src: url("../../images/icon/question-circle.svg"); }
+.icon-question-square { --icon-src: url("../../images/icon/question-square.svg"); }
+
+/* R */
+.icon-redo { --icon-src: url("../../images/icon/redo.svg"); }
+.icon-refresh-alt { --icon-src: url("../../images/icon/refresh-alt.svg"); }
+.icon-refresh { --icon-src: url("../../images/icon/refresh.svg"); }
+.icon-repeat { --icon-src: url("../../images/icon/repeat.svg"); }
+.icon-room-service { --icon-src: url("../../images/icon/room-service.svg"); }
+
+/* S */
+.icon-save { --icon-src: url("../../images/icon/save.svg"); }
+.icon-search { --icon-src: url("../../images/icon/search.svg"); }
+.icon-select-multiple { --icon-src: url("../../images/icon/select-multiple.svg"); }
+.icon-send { --icon-src: url("../../images/icon/send.svg"); }
+.icon-settings { --icon-src: url("../../images/icon/settings.svg"); }
+.icon-share { --icon-src: url("../../images/icon/share.svg"); }
+.icon-shooting-star { --icon-src: url("../../images/icon/shooting-star.svg"); }
+.icon-sparkles { --icon-src: url("../../images/icon/sparkles.svg"); }
+.icon-star { --icon-src: url("../../images/icon/star.svg"); }
+.icon-syringe { --icon-src: url("../../images/icon/syringe.svg"); }
+
+/* T */
+.icon-tag-plus { --icon-src: url("../../images/icon/tag-plus.svg"); }
+.icon-tag { --icon-src: url("../../images/icon/tag.svg"); }
+.icon-trash { --icon-src: url("../../images/icon/trash.svg"); }
+
+/* U */
+.icon-undo { --icon-src: url("../../images/icon/undo.svg"); }
+.icon-upload { --icon-src: url("../../images/icon/upload.svg"); }
+.icon-user-circle { --icon-src: url("../../images/icon/user-circle.svg"); }
+.icon-user-hexagon { --icon-src: url("../../images/icon/user-hexagon.svg"); }
+.icon-user { --icon-src: url("../../images/icon/user.svg"); }
+.icon-users-group { --icon-src: url("../../images/icon/users-group.svg"); }
+.icon-users { --icon-src: url("../../images/icon/users.svg"); }
+
+/* V */
+.icon-volume-high { --icon-src: url("../../images/icon/volume-high.svg"); }
+.icon-volume-none { --icon-src: url("../../images/icon/volume-none.svg"); }
+
+/* X */
+.icon-x-circle { --icon-src: url("../../images/icon/x-circle.svg"); }
+.icon-x { --icon-src: url("../../images/icon/x.svg"); }

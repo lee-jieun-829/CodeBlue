@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.certificate.mapper.ICertificateMapper">
+
+	<resultMap id="chartMap" type="kr.or.ddit.cpr.vo.ChartVO">
+	    <id property="chartNo" column="CHART_NO"/>
+	    <result property="chartContent" column="CHART_CONTENT" jdbcType="CLOB" javaType="java.lang.String"/>
+	    <result property="chartRegdate" column="CHART_REGDATE"/>
+	    <result property="employeeNo" column="EMPLOYEE_NO"/>
+	    <result property="patientNo" column="PATIENT_NO"/>
+	    <result property="registrationNo" column="REGISTRATION_NO"/>
+	    <result property="admissionNo" column="ADMISSION_NO"/>
+	    
+	    <result property="employeeName" column="EMPLOYEE_NAME"/> 
+	    	<collection property="diagnosis" javaType="java.util.List" ofType="kr.or.ddit.cpr.vo.DiagnosisVO">
+		        <id property="diagnosisNo" column="DIAGNOSIS_NO"/>
+		        <result property="diagnosisCode" column="DIAGNOSIS_CODE"/>
+		        <result property="diagnosisName" column="DIAGNOSIS_NAME"/>
+		        <result property="diagnosisDetailYN" column="DIAGNOSIS_DETAIL_YN"/>
+	        </collection>
+	</resultMap>
+	
+	<resultMap id="certificateDetailMap" type="kr.or.ddit.cpr.vo.CertificateVO">
+        <id property="chartNo" column="CHART_NO"/>
+	        
+        <result property="certificateNo" column="CERTIFICATE_NO"/>
+        <result property="medicalCertificatePrintNo" column="MEDICAL_CERTIFICATE_PRINT_NO"/>
+        <result property="medicalCertificateOnset" column="medicalCertificateOnset"/>
+        <result property="medicalCertificateDiagnosis" column="medicalCertificateDiagnosis"/>
+        <result property="medicalCertificateContent" column="MEDICAL_CERTIFICATE_CONTENT"/>
+        <result property="medicalCertificateDate" column="medicalCertificateDate"/>
+        <result property="medicalCertificateRemark" column="MEDICAL_CERTIFICATE_REMARK"/>
+        <result property="medicalCertificatePurpose" column="MEDICAL_CERTIFICATE_PURPOSE"/>
+        <result property="medicalCertificateStatus" column="MEDICAL_CERTIFICATE_STATUS"/>
+        
+        <result property="patientNo" column="PATIENT_NO"/>
+        <result property="patientName" column="PATIENT_NAME"/>
+        <result property="patientRegno1" column="PATIENT_REGNO1"/>
+        <result property="patientRegno2" column="PATIENT_REGNO2"/>
+        <result property="patientTel" column="PATIENT_TEL"/>
+        <result property="patientAddr1" column="PATIENT_ADDR1"/>
+        <result property="patientAddr2" column="PATIENT_ADDR2"/>
+        
+        <result property="employeeNo" column="EMPLOYEE_NO"/>
+        <result property="employeeName" column="EMPLOYEE_NAME"/>
+        <result property="employeeCode" column="EMPLOYEE_CODE"/>
+        <result property="employeeDetailLicence" column="EMPLOYEE_DETAIL_LICENCE"/>
+        
+        <result property="hospitalNo" column="HOSPITAL_NO"/>
+        <result property="hospitalName" column="HOSPITAL_NAME"/>
+        <result property="hospitalAddr" column="HOSPITAL_ADDR"/>
+        
+        <collection property="diagnosisList" javaType="java.util.List" ofType="kr.or.ddit.cpr.vo.DiagnosisVO">
+            <id property="diagnosisNo" column="DIAGNOSIS_NO"/>
+            <result property="diagnosisCode" column="DIAGNOSIS_CODE"/>
+            <result property="diagnosisName" column="DIAGNOSIS_NAME"/>
+            <result property="diagnosisDetailYN" column="DIAGNOSIS_DETAIL_YN"/>
+        </collection>
+        <collection property="progressNote" 
+                column="{chartNo=CHART_NO, searchDate=searchDate}" 
+                select="selectProgressNote" />
+	    <collection property="nursingChart" column="CHART_NO" select="selectNursingChart" />
+	    <collection property="nursingAssessment" column="CHART_NO" select="selectNursingAssessment" />
+	    <collection property="predetail" 
+                column="{chartNo=CHART_NO, searchDate=searchDate}" 
+                select="selectPredetail" />
+    </resultMap>
+    
+    <resultMap id="patientFullHistoryMap" type="kr.or.ddit.cpr.vo.ChartVO" >
+    	<id property="chartNo" column="CHART_NO"/>
+    	<result property="chartContent" column="CHART_CONTENT" jdbcType="CLOB" javaType="java.lang.String"/>
+    	<result property="chartRegdate" column="CHART_REGDATE"/>
+    	<result property="employeeName" column="EMPLOYEE_NAME"/>
+    	
+    	<collection property="progressNote" column="{chartNo=CHART_NO, searchDate=searchDate}" select="selectProgressNote" />
+    	<collection property="diagnosis" column="CHART_NO" select="selectDiagnosis" />
+    	<collection property="nursingCharts" column="CHART_NO" select="selectNursingChart" />
+    	<collection property="assessments" column="CHART_NO" select="selectNursingAssessment" />
+    	<collection property="predetails" column="{chartNo=CHART_NO, searchDate=searchDate}" select="selectPredetail" />
+    </resultMap>
+    
+    <resultMap id="predetailMap" type="kr.or.ddit.cpr.vo.PredetailVO">
+        <id property="predetailNo" column="PREDETAIL_NO"/>
+        <result property="predetailType" column="PREDETAIL_TYPE"/>
+        <result property="predetailRegdate" column="PREDETAIL_REGDATE"/>
+        
+        <collection property="drugList" ofType="kr.or.ddit.cpr.vo.DrugVO">
+            <result property="drugName" column="DRUG_NAME"/>
+            <result property="predrugDetailDose" column="PREDRUG_DETAIL_DOSE"/>
+            <result property="predrugDetailFreq" column="PREDRUG_DETAIL_FREQ"/>
+            <result property="predrugDetailDay" column="PREDRUG_DETAIL_DAY"/>
+            <result property="predrugDetailType" column="PREDRUG_DETAIL_TYPE"/>
+        </collection>
+
+        <collection property="dietList" ofType="kr.or.ddit.cpr.vo.DietVO">
+            <result property="dietName" column="DIET_NAME"/>
+            <result property="predietDose" column="PREDIET_DOSE"/>
+        </collection>
+
+        <collection property="treatList" ofType="kr.or.ddit.cpr.vo.TreatmentVO">
+            <result property="treatmentName" column="TREATMENT_NAME"/>
+            <result property="pretreatmentDetailFreq" column="PRETREATMENT_DETAIL_FREQ"/>
+        </collection>
+
+        <collection property="examList" ofType="kr.or.ddit.cpr.vo.ExaminationVO">
+            <result property="examinationName" column="EXAMINATION_NAME"/>
+            <result property="preexaminationDetailSite" column="PREEXAMINATION_DETAIL_SITE"/>
+            <result property="preexaminationDetailLaterality" column="PREEXAMINATION_DETAIL_LATERALITY"/>
+        </collection>
+
+        <collection property="operList" ofType="kr.or.ddit.cpr.vo.OperationVO">
+            <result property="operationName" column="OPERATION_NAME"/>
+            <result property="preoperationRegdate" column="PREOPERATION_REGDATE"/>
+            <result property="employeeName" column="EMPLOYEE_NAME"/>
+        </collection>
+    </resultMap>
+	
+	<select id="searchPatient" resultType="kr.or.ddit.cpr.vo.CertificateVO">
+		SELECT
+		    patient_no
+		  , patient_name
+		  , patient_regno1
+		  , patient_regno2
+		  , patient_tel
+		  , patient_addr1
+		  , patient_addr2
+		  , patient_gen
+		  , (EXTRACT(YEAR FROM SYSDATE) - 
+	         TO_NUMBER(
+	            CASE 
+	                WHEN SUBSTR(patient_regno2, 1, 1) IN ('1', '2') THEN '19' 
+	                WHEN SUBSTR(patient_regno2, 1, 1) IN ('3', '4') THEN '20' 
+	                ELSE '19' 
+	            END || SUBSTR(patient_regno1, 1, 2)
+	         ) + 1) AS patientAge
+		FROM
+		    patient
+		WHERE
+		    patient_name LIKE '%' || #{keyword} || '%'
+		OR  
+			to_char(patient_no) LIKE '%' || #{keyword} || '%'
+	</select>
+	
+	<select id="selectPatientChart" parameterType="int" resultMap="chartMap">
+	    SELECT
+		    c.chart_no
+		  , c.chart_content
+		  , to_char(c.chart_regdate, 'YYYY-MM-DD') AS chart_regdate
+		  , c.employee_no
+		  , c.patient_no
+		  , c.registration_no
+		  , c.admission_no
+		  , e.employee_name
+		  , e.employee_code
+		  , d.diagnosis_no
+		  , d.diagnosis_code
+		  , d.diagnosis_name
+		  , dd.diagnosis_detail_yn
+		FROM
+		    chart c
+		    JOIN employee         e ON c.employee_no = e.employee_no
+		    LEFT JOIN diagnosis_detail dd ON c.chart_no = dd.chart_no
+		    LEFT JOIN diagnosis        d ON dd.diagnosis_no = d.diagnosis_no
+		WHERE
+		    c.patient_no = #{patientNo} 
+		ORDER BY c.chart_regdate DESC
+	</select>
+
+	<select id="selectPatientDoc" resultType="kr.or.ddit.cpr.vo.CertificateVO">
+		SELECT
+		    'CERT' AS doctype
+		  , mc.certificate_no
+		  , mc.chart_no
+		  , mc.medical_certificate_print_no
+		  , to_char(mc.medical_certificate_date, 'YYYY-MM-DD') AS medicalCertificateDate
+		  , mc.medical_certificate_purpose
+		  
+		  <!-- 나중에 기록지들이 추가된다면
+		       예: UNION ALL + 위와 같은 방식  -->
+		FROM
+		         medical_certificate mc
+		    JOIN chart c ON mc.chart_no = c.chart_no
+		WHERE
+		    c.patient_no = #{patientNo} ORDER BY mc.medical_certificate_date DESC
+	</select>
+	
+	<select id="selectDocDetail" resultMap="certificateDetailMap">
+		<choose>
+	        <when test="docType == 'CERT'">
+	            SELECT
+	                mc.certificate_no
+	              , c.chart_no AS CHART_NO
+	              , mc.medical_certificate_print_no
+	              , TO_CHAR(mc.medical_certificate_onset, 'YYYY-MM-DD')     AS medicalCertificateOnset
+	              , TO_CHAR(mc.medical_certificate_diagnosis, 'YYYY-MM-DD') AS medicalCertificateDiagnosis
+	              , mc.medical_certificate_content
+	              , TO_CHAR(mc.medical_certificate_date, 'YYYY-MM-DD')      AS medicalCertificateDate
+	              , mc.medical_certificate_remark
+	              , mc.medical_certificate_purpose
+	              , mc.medical_certificate_status
+	              , #{clickDate} AS searchDate
+	
+	              , p.patient_no
+	              , p.patient_name
+	              , p.patient_regno1
+	              , p.patient_regno2
+	              , p.patient_tel
+	              , p.patient_addr1
+	              , p.patient_addr2
+	              
+	              , d.diagnosis_no
+	              , d.diagnosis_code
+	              , d.diagnosis_name
+	              , dd.diagnosis_detail_yn
+	
+	              , e.employee_no
+	              , e.employee_name
+	              , e.employee_code
+	              , e.employee_detail_licence
+	
+	              , h.hospital_no
+	              , h.hospital_name
+	              , h.hospital_addr
+	            FROM
+	                chart c 
+	                INNER JOIN patient p  ON c.patient_no = p.patient_no
+	                LEFT JOIN employee e ON c.employee_no = e.employee_no
+	                LEFT JOIN hospital h ON e.hospital_no = h.hospital_no
+	                LEFT JOIN diagnosis_detail dd ON c.chart_no = dd.chart_no
+	                LEFT JOIN diagnosis d ON dd.diagnosis_no = d.diagnosis_no
+	                LEFT JOIN medical_certificate mc ON mc.chart_no = c.chart_no 
+	                                                  AND mc.certificate_no = #{certificateNo}
+	            WHERE
+	                c.chart_no = #{chartNo}
+	        </when>
+	        
+	        <when test="docType == 'PROG'">
+	            SELECT 
+	            	mc.certificate_no
+	              , c.chart_no
+	              , #{clickDate} AS medicalCertificateDate
+	              , p.patient_name
+	              , e.employee_name
+	              , #{clickDate} as searchDate 
+	              , d.diagnosis_no
+			      , d.diagnosis_code
+			      , d.diagnosis_name
+			      , dd.diagnosis_detail_yn
+	            FROM chart c
+	            INNER JOIN patient p ON c.patient_no = p.patient_no
+	            LEFT JOIN employee e ON c.employee_no = e.employee_no
+	            LEFT JOIN medical_certificate mc ON c.chart_no = mc.chart_no
+	            LEFT JOIN diagnosis_detail dd ON c.chart_no = dd.chart_no
+   				LEFT JOIN diagnosis d ON dd.diagnosis_no = d.diagnosis_no
+	            WHERE c.chart_no = #{chartNo}
+	        </when>
+	    </choose>
+	</select>
+
+	<insert id="insertCertificate" parameterType="kr.or.ddit.cpr.vo.CertificateVO">
+	    INSERT INTO MEDICAL_CERTIFICATE (
+	          CERTIFICATE_NO                  
+	        , CHART_NO                        
+	        , MEDICAL_CERTIFICATE_PRINT_NO    
+	        , MEDICAL_CERTIFICATE_ONSET       
+	        , MEDICAL_CERTIFICATE_DIAGNOSIS   
+	        , MEDICAL_CERTIFICATE_CONTENT     
+	        , MEDICAL_CERTIFICATE_DATE        
+	        , MEDICAL_CERTIFICATE_REMARK      
+	        , MEDICAL_CERTIFICATE_PURPOSE     
+	        , MEDICAL_CERTIFICATE_STATUS      
+	    ) VALUES (
+	          #{certificateNo}                
+	        , #{chartNo}
+	        , (SELECT 
+	                CASE WHEN #{certificateNo} = 1 THEN 'DIAG-' ELSE 'OPIN-' END || 
+	                TO_CHAR(SYSDATE, 'YYYYMMDD') || '-' || 
+	                LPAD(NVL(MAX(SUBSTR(medical_certificate_print_no, -2)), 0) + 1, 2, '0')
+	           FROM medical_certificate 
+	           WHERE TO_CHAR(medical_certificate_date, 'YYYYMMDD') = TO_CHAR(SYSDATE, 'YYYYMMDD')
+	             AND certificate_no = #{certificateNo})
+	        , TO_DATE(NULLIF(#{medicalCertificateOnset}, ''), 'YYYY-MM-DD')
+	        , TO_DATE(#{medicalCertificateDiagnosis}, 'YYYY-MM-DD')
+	        , #{medicalCertificateContent}
+	        , sysdate
+	        , #{medicalCertificateRemark}
+	        , #{medicalCertificatePurpose}
+	        , '002'
+	    )
+	</insert>
+
+	<select id="selectPatientFullHistory" resultMap="patientFullHistoryMap">
+        SELECT 
+            c.CHART_NO 
+          , c.CHART_CONTENT 
+          , c.CHART_REGDATE
+          , e.EMPLOYEE_NAME
+        FROM CHART c
+        JOIN EMPLOYEE e ON c.EMPLOYEE_NO = e.EMPLOYEE_NO
+        WHERE c.PATIENT_NO = #{patientNo}
+        ORDER BY c.CHART_REGDATE DESC
+    </select>
+
+    <select id="selectPredetail" resultMap="predetailMap">
+        SELECT 
+            p.PREDETAIL_NO 
+          , p.PREDETAIL_TYPE 
+          , p.PREDETAIL_REGDATE
+          , dr.DRUG_NAME 
+          , pdd.PREDRUG_DETAIL_DOSE 
+          , pdd.PREDRUG_DETAIL_FREQ 
+          , pdd.PREDRUG_DETAIL_DAY
+          , pdd.PREDRUG_DETAIL_TYPE
+          , dt.DIET_NAME 
+          , pd.PREDIET_DOSE
+          , tr.TREATMENT_NAME 
+          , ptd.PRETREATMENT_DETAIL_FREQ
+          , ex.EXAMINATION_NAME 
+          , ped.PREEXAMINATION_DETAIL_SITE
+          , ped.PREEXAMINATION_DETAIL_LATERALITY
+          , op.OPERATION_NAME
+          , pop.PREOPERATION_REGDATE
+          , e_op.EMPLOYEE_NAME
+        FROM PREDETAIL p
+        LEFT JOIN PREDRUG_DETAIL pdd ON p.PREDETAIL_NO = pdd.PREDETAIL_NO
+        LEFT JOIN DRUG dr ON pdd.DRUG_NO = dr.DRUG_NO
+        LEFT JOIN PREDIET pd ON p.PREDETAIL_NO = pd.PREDETAIL_NO
+        LEFT JOIN DIET dt ON pd.DIET_NO = dt.DIET_NO
+        LEFT JOIN PRETREATMENT_DETAIL ptd ON p.PREDETAIL_NO = ptd.PREDETAIL_NO
+        LEFT JOIN TREATMENT tr ON ptd.TREATMENT_NO = tr.TREATMENT_NO
+        LEFT JOIN PREEXAMINATION_DETAIL ped ON p.PREDETAIL_NO = ped.PREDETAIL_NO
+        LEFT JOIN EXAMINATION ex ON ped.EXAMINATION_NO = ex.EXAMINATION_NO
+        LEFT JOIN PREOPERATION pop ON p.PREDETAIL_NO = pop.PREDETAIL_NO
+        LEFT JOIN OPERATION op ON pop.OPERATION_NO = op.OPERATION_NO
+        LEFT JOIN EMPLOYEE e_op ON pop.EMPLOYEE_NO = e_op.EMPLOYEE_NO
+        WHERE p.CHART_NO = #{chartNo}
+        AND TO_CHAR(p.PREDETAIL_REGDATE, 'YYYY-MM-DD') = #{searchDate}
+    </select>
+
+    <select id="selectProgressNote" resultType="kr.or.ddit.cpr.vo.ProgressNoteVO">
+        SELECT 
+        	PROGRESSNOTE_NO
+          , PROGRESSNOTE_CONTENT
+          , PROGRESSNOTE_DATE
+        FROM 
+        	PROGRESSNOTE 
+        WHERE CHART_NO = #{chartNo} 
+	        AND TO_CHAR(PROGRESSNOTE_DATE, 'YYYY-MM-DD') = SUBSTR(#{searchDate}, 1, 10)
+	    ORDER BY PROGRESSNOTE_DATE DESC
+    </select>
+
+    <select id="selectDiagnosis" resultType="kr.or.ddit.cpr.vo.DiagnosisVO">
+        SELECT 
+        	d.DIAGNOSIS_NO
+          , d.DIAGNOSIS_CODE
+          , d.DIAGNOSIS_NAME
+          , dd.DIAGNOSIS_DETAIL_YN
+        FROM 
+        	DIAGNOSIS_DETAIL dd 
+        	JOIN DIAGNOSIS d ON dd.DIAGNOSIS_NO = d.DIAGNOSIS_NO
+        WHERE 
+        	dd.CHART_NO = #{chartNo}
+    </select>
+
+    <select id="selectNursingChart" resultType="kr.or.ddit.cpr.vo.NursingChartVO">
+        SELECT 
+        	NURSINGCHART_NO
+          , NURSINGCHART_CONTENT
+          , NURSINGCHART_DATE
+          , NURSINGCHART_PRESSURE
+          , NURSINGCHART_TEMPERATURE
+          , NURSINGCHART_PULSE
+        FROM 
+        	NURSINGCHART 
+        WHERE CHART_NO = #{chartNo} 
+        ORDER BY NURSINGCHART_DATE DESC
+    </select>
+
+    <select id="selectNursingAssessment" resultType="kr.or.ddit.cpr.vo.NursingAssessmentVO">
+        SELECT * 
+        FROM 
+        	NURSING_ASSESSMENT 
+        WHERE CHART_NO = #{chartNo}
+    </select>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

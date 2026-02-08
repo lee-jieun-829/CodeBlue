@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.employee.mapper.IEmployeeMapper">
+		
+		<resultMap type="kr.or.ddit.cpr.vo.EmployeeVO" id="employeeMap">
+		<!-- PK -->
+			<id property="employeeNo" column="EMPLOYEE_NO"/>
+			<result property="employeeName" column="EMPLOYEE_NAME"/>
+			<result property="employeePassword" column="EMPLOYEE_PASSWORD"/>
+			<result property="employeeGen" column="EMPLOYEE_GEN"/>
+			<result property="employeeRegno1" column="EMPLOYEE_REGNO1"/>
+			<result property="employeeRegno2" column="EMPLOYEE_REGNO2"/>
+			<result property="employeeTel" column="EMPLOYEE_TEL"/>
+			<result property="employeeRegdate" column="EMPLOYEE_REGDATE"/>
+			<result property="employeeRetdate" column="EMPLOYEE_RETDATE"/>
+			<result property="employeeStatus" column="EMPLOYEE_STATUS"/>
+			<result property="employeeBirth" column="EMPLOYEE_BIRTH"/>
+			<result property="employeeCode" column="EMPLOYEE_CODE"/>
+			<result property="employeeEmail" column="EMPLOYEE_EMAIL"/>
+			<result property="fileNo" column="FILE_NO"/>
+			<result property="enabled" column="ENABLED"/>
+			<result property="hospitalNo" column="HOSPITAL_NO"/>
+			<result property="employeeDetailLicence" column="EMPLOYEE_DETAIL_LICENCE"/>
+			<result property="pwTempYn" column="PW_TEMP_YN"/>
+			<collection property="authList" resultMap="authMap"/>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.cpr.vo.EmployeeAuthVO" id="authMap">
+		<result property="employeeNo" column="EMPLOYEE_NO"/>
+		<result property="auth" column="AUTH"/>
+	</resultMap>
+	
+	<resultMap id="attachmentDetailMap" type="kr.or.ddit.cpr.vo.AttachmentDetailVO">
+	    <result property="attachmentDetailNo" column="ATTACHMENT_DETAIL_NO"/>
+	    <result property="attachmentDetailName" column="ATTACHMENT_DETAIL_NAME"/>
+	    <result property="attachmentDetailMime" column="ATTACHMENT_DETAIL_MIME"/>
+	    <result property="attachmentDetailPath" column="ATTACHMENT_DETAIL_PATH"/>
+	    <result property="attachmentDetailExt" column="ATTACHMENT_DETAIL_EXT"/>
+	    <result property="attachmentDetailSize" column="ATTACHMENT_DETAIL_SIZE"/>
+	    <result property="attachmentNo" column="ATTACHMENT_NO"/>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.cpr.vo.LocationVO" id="locationMap">
+		<result property="locationNo" column="LOCATION_NO"/>
+		<result property="locationCode" column="LOCATION_CODE"/>
+		<result property="locationName" column="LOCATION_NAME"/>
+		<result property="employeeNo" column="EMPLOYEE_NO"/>
+		<result property="employeeName" column="EMPLOYEE_NAME"/>
+		<result property="employeeCode" column="EMPLOYEE_CODE"/>
+	</resultMap>
+	
+	
+	<!-- 마이페이지 -->
+	<select id="selectMyPage" parameterType="int" resultMap="employeeMap">
+		select e.employee_no, employee_name, employee_password, employee_gen, employee_regno1, employee_regno2,
+			   employee_tel, employee_regdate, employee_retdate, employee_status, employee_birth, employee_code,
+			   employee_email, file_no, enabled, hospital_no, employee_detail_licence, e.pw_temp_yn, a.auth
+		  from EMPLOYEE e left outer join employee_auth a on(e.employee_no = a.employee_no)
+		 where E.EMPLOYEE_NO = #{employeeNo}
+	</select>
+	
+	<!-- 관리자 - 계정 관리 메인화면 -->	
+	<select id="selectEmployeeList" parameterType="map" resultMap="employeeMap">
+		SELECT B.*
+		FROM (
+			SELECT A.*, ROWNUM AS RNUM
+			FROM (
+				SELECT E.EMPLOYEE_NO
+					 , E.EMPLOYEE_NAME
+					 , E.EMPLOYEE_GEN
+					 , E.EMPLOYEE_TEL
+					 , E.EMPLOYEE_REGDATE
+					 , E.EMPLOYEE_STATUS
+					 , E.EMPLOYEE_CODE
+					 , E.EMPLOYEE_EMAIL
+					 , E.ENABLED
+					 , E.HOSPITAL_NO
+					 , E.FILE_NO
+				  FROM EMPLOYEE E
+				WHERE 1=1
+				
+				<if test="keyword != null and keyword != ''">
+				   AND (E.EMPLOYEE_NAME LIKE '%' || #{keyword} || '%'
+					OR TO_CHAR(E.EMPLOYEE_NO) LIKE '%' || #{keyword} || '%')
+				</if>
+				
+				<if test="position != null and position != ''">
+					AND E.EMPLOYEE_CODE = #{position}
+				</if>
+				
+				<if test="sort == 'active'">
+					AND E.EMPLOYEE_STATUS = '001'
+				</if>
+				<if test="sort == 'retired'">
+					AND E.EMPLOYEE_STATUS = '002'
+				</if>
+
+				ORDER BY
+				<choose>
+					<when test="sort == 'date_asc'">
+						E.EMPLOYEE_REGDATE ASC
+					</when>
+					<otherwise>
+						E.EMPLOYEE_REGDATE DESC
+					</otherwise>
+				</choose>
+			) A
+		) B
+		WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+	</select>
+	
+	<!-- 관리자 - 계정관리의 페이징의 목록과 갯수 -->
+	<select id="countEmployeeList" parameterType="map" resultType="int">
+	    SELECT COUNT(*)
+	    FROM employee e
+	    WHERE 1=1
+	    <if test="keyword != null and keyword != ''">
+	       AND (e.employee_name LIKE '%' || #{keyword} || '%'
+	       OR 
+           TO_CHAR(e.employee_no) LIKE '%' || #{keyword} || '%')
+	    </if>
+	    <if test="position != null and position != ''">
+	        AND e.employee_code = #{position}
+	    </if>
+	    <if test="sort == 'active'">
+	        AND e.employee_status = '001'
+	    </if>
+	    <if test="sort == 'retired'">
+	        AND e.employee_status = '002'
+	    </if>
+	</select>
+	
+	<!-- 관리자 - 계정 생성 -->	
+	<insert id="insertAcc" parameterType="kr.or.ddit.cpr.vo.EmployeeVO">
+		<selectKey keyProperty="employeeNo" resultType="int" order="BEFORE">
+			SELECT TO_NUMBER(
+				TO_CHAR(#{employeeRegdate}, 'YYMM') || 
+				#{employeeCode} || 
+				LPAD(SEQ_EMPLOYEE.NEXTVAL, 3, '0')
+			) FROM DUAL
+		</selectKey>
+			INSERT INTO EMPLOYEE (EMPLOYEE_NO
+							    , EMPLOYEE_NAME
+							    , EMPLOYEE_PASSWORD
+							    , EMPLOYEE_GEN
+							    , EMPLOYEE_REGNO1
+							    , EMPLOYEE_REGNO2
+							    , EMPLOYEE_TEL
+							    , EMPLOYEE_REGDATE
+							    , EMPLOYEE_RETDATE
+							    , EMPLOYEE_STATUS
+							    , EMPLOYEE_BIRTH
+							    , EMPLOYEE_CODE
+							    , EMPLOYEE_EMAIL
+							    , FILE_NO
+							    , ENABLED
+							    , HOSPITAL_NO
+							    , EMPLOYEE_DETAIL_LICENCE
+							  )
+							  VALUES (
+							      #{employeeNo}
+							    , #{employeeName}
+							    , #{employeePassword}
+							    , #{employeeGen}
+							    , #{employeeRegno1}
+							    , #{employeeRegno2}
+							    , #{employeeTel}
+							    , #{employeeRegdate}
+							    , NULL
+							    , #{employeeStatus}
+							    , #{employeeBirth}
+							    , #{employeeCode}
+							    , #{employeeEmail}
+							    , #{fileNo}
+							    , #{enabled}
+							    , #{hospitalNo}
+							    , #{employeeDetailLicence}
+							  )
+	</insert>
+	
+	<!-- 관리자 - 계정 생성시 권한 주기 -->
+	<insert id="insertAccAuth" parameterType="kr.or.ddit.cpr.vo.EmployeeAuthVO">
+		INSERT INTO EMPLOYEE_AUTH(employee_no, AUTH)
+						   VALUES(#{employeeNo}, #{auth})
+	</insert>
+	
+	<!-- 관리자 - 계정 생성시 첨부파일 -->	
+	<insert id="insertAttachment" parameterType="kr.or.ddit.cpr.vo.AttachmentVO">
+		<selectKey keyProperty="attachmentNo" resultType="int" order="BEFORE">
+			SELECT SEQ_ATTACHMENT.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO ATTACHMENT(ATTACHMENT_NO, ATTACHMENT_DATE)
+						VALUES(#{attachmentNo}, SYSDATE)
+	</insert>
+	
+	<!-- 관리자 - 계정 생성시 첨부파일의 상세정보 -->	
+	<insert id="insertAttachmentDetail" parameterType="kr.or.ddit.cpr.vo.AttachmentDetailVO">
+		INSERT INTO ATTACHMENT_DETAIL (ATTACHMENT_DETAIL_NO
+									 , ATTACHMENT_DETAIL_NAME
+								     , ATTACHMENT_DETAIL_MIME
+									 , ATTACHMENT_DETAIL_DATE
+									 , ATTACHMENT_DETAIL_PATH
+									 , ATTACHMENT_DETAIL_EXT
+									 , ATTACHMENT_DETAIL_SIZE
+									 , ATTACHMENT_NO
+									 , ATTACHMENTDET_DETAILFANCYSIZE
+							) VALUES (
+									 SEQ_ATTACHMENT_DETAIL.NEXTVAL
+									 , #{attachmentDetailName}
+									 , #{attachmentDetailMime}
+									 , SYSDATE
+									 , #{attachmentDetailPath}
+									 , #{attachmentDetailExt}
+									 , #{attachmentDetailSize}
+									 , #{attachmentNo}
+									 , #{attachmentDetailFancysize})
+	</insert>
+	
+	<!-- 마이페이지 사진 조회 -->
+	<select id="selectFileDetail" parameterType="int" resultMap="attachmentDetailMap">
+		SELECT ATTACHMENT_DETAIL_NO
+ 			   , ATTACHMENT_DETAIL_NAME
+			   , ATTACHMENT_DETAIL_MIME
+			   , ATTACHMENT_DETAIL_PATH
+			   , ATTACHMENT_DETAIL_EXT
+			   , ATTACHMENT_DETAIL_SIZE 
+			   , ATTACHMENT_NO
+		  FROM ATTACHMENT_DETAIL
+		 WHERE ATTACHMENT_DETAIL_NO = #{detailNo}
+	</select>
+	
+	
+	<!-- 관리자 - 계정 상세 조회 -->
+	<select id="selectEmployeeDetail" parameterType="int" resultMap="employeeMap">
+		SELECT E.EMPLOYEE_NO
+			   , E.EMPLOYEE_NAME
+			   , E.EMPLOYEE_CODE
+			   , E.EMPLOYEE_TEL
+			   , E.EMPLOYEE_EMAIL
+			   , E.EMPLOYEE_GEN
+			   , E.EMPLOYEE_REGDATE
+			   , E.EMPLOYEE_RETDATE
+			   , E.EMPLOYEE_STATUS
+			   , E.EMPLOYEE_DETAIL_LICENCE
+			   , E.FILE_NO
+			   , E.ENABLED
+			   , A.AUTH
+		  FROM EMPLOYEE E
+		  LEFT OUTER JOIN EMPLOYEE_AUTH A ON (E.EMPLOYEE_NO = A.EMPLOYEE_NO)
+		 WHERE E.EMPLOYEE_NO = #{employeeNo}
+	</select>
+	
+	<!-- 관리자 - 계정 수정 -->
+	<update id="updateAcc">
+		UPDATE EMPLOYEE
+		SET EMPLOYEE_NAME = #{employeeName}
+			, EMPLOYEE_TEL = #{employeeTel}
+			, EMPLOYEE_EMAIL = #{employeeEmail}
+			, EMPLOYEE_CODE = #{employeeCode}
+			, EMPLOYEE_DETAIL_LICENCE = #{employeeDetailLicence}
+		<if test="fileNo != 0">
+			, FILE_NO = #{fileNo}
+		</if>
+		WHERE EMPLOYEE_NO = #{employeeNo}
+	</update>
+	
+	
+	<!-- 관리자 - 계정 퇴사 처리 -->
+	<update id="retireAcc">
+		UPDATE EMPLOYEE
+		   SET EMPLOYEE_STATUS = '002'
+		   	   , ENABLED = '0'
+		   	   , EMPLOYEE_RETDATE = SYSDATE
+		 WHERE EMPLOYEE_NO = #{employeeNo}
+	</update>
+	
+	
+	<!-- 엑셀 일괄 등록 - 중복&유효성 체크 -->
+	<select id="countByEmail" resultType="int">
+		SELECT COUNT(*)
+		  FROM EMPLOYEE
+		 WHERE EMPLOYEE_EMAIL = #{employeeEmail}
+	</select>
+	
+	<select id="countByTel" resultType="int">
+		SELECT COUNT(*)
+		  FROM EMPLOYEE
+		 WHERE EMPLOYEE_TEL = #{employeeTel}
+	</select>
+	
+	<select id="countByRegNo" resultType="int">
+		SELECT COUNT(*)
+		  FROM EMPLOYEE
+		 WHERE EMPLOYEE_REGNO1 = #{employeeRegno1}
+		   AND EMPLOYEE_REGNO2 = #{employeeRegno2}
+	</select>
+	
+	
+	<!-- 관리자 (계정) - 엑셀 일괄 다운로드 -->
+	<select id="downloadEmployeeExcelFile" parameterType="map" resultMap="employeeMap">
+		SELECT E.EMPLOYEE_NO
+			 , E.EMPLOYEE_NAME
+			 , E.EMPLOYEE_GEN
+			 , E.EMPLOYEE_TEL
+			 , E.EMPLOYEE_BIRTH
+			 , E.EMPLOYEE_REGDATE
+			 , E.EMPLOYEE_STATUS
+			 , E.EMPLOYEE_CODE
+			 , E.EMPLOYEE_EMAIL
+			 , E.ENABLED
+		  FROM EMPLOYEE E
+		 WHERE 1=1
+		 
+		<!-- 키워드 검색 -->
+		<if test="keyword != null and keyword != ''">
+			AND (e.employee_name LIKE '%' || #{keyword} || '%' 
+			 OR TO_CHAR(e.employee_no) LIKE '%' || #{keyword} || '%')
+		</if>
+		
+		<!-- 직책 필터 -->
+		<if test="position != null and position != ''">
+			AND E.EMPLOYEE_CODE = #{position}
+		</if>
+		
+		<!-- sort 처리 -->
+		<if test="sort == 'active'">
+			AND E.EMPLOYEE_STATUS = '001'
+		</if>
+		<if test="sort == 'retired'">
+			AND E.EMPLOYEE_STATUS = '002'
+		</if>
+		
+		ORDER BY
+			<choose>
+				<when test="sort == 'date_asc'">
+					E.EMPLOYEE_REGDATE ASC
+				</when>
+				<otherwise>
+					E.EMPLOYEE_REGDATE DESC
+				</otherwise>
+			</choose>
+	</select>
+	
+	<!-- 배정 관리 -->
+	<select id="selectLocationList" resultMap="locationMap">
+		SELECT L.LOCATION_NO
+			 , L.LOCATION_CODE
+			 , L.LOCATION_NAME
+			 , L.EMPLOYEE_NO
+			 , E.EMPLOYEE_NAME
+			 , E.EMPLOYEE_CODE
+		  FROM LOCATION L
+		  LEFT JOIN EMPLOYEE E ON L.EMPLOYEE_NO = E.EMPLOYEE_NO
+		 ORDER BY L.LOCATION_NO ASC
+	</select>
+	
+	<select id="selectEmployeeLocation" parameterType="int" resultMap="locationMap">
+		SELECT L.LOCATION_NO
+			 , L.LOCATION_CODE
+			 , L.LOCATION_NAME
+			 , L.EMPLOYEE_NO
+			 , E.EMPLOYEE_NAME
+			 , E.EMPLOYEE_CODE
+		  FROM LOCATION L
+		  LEFT JOIN EMPLOYEE E ON L.EMPLOYEE_NO = E.EMPLOYEE_NO
+		 WHERE L.EMPLOYEE_NO = #{employeeNo}
+		 ORDER BY L.LOCATION_NO ASC
+	</select>
+	
+	<update id="updateLocationManager" parameterType="kr.or.ddit.cpr.vo.LocationVO">
+		UPDATE LOCATION
+		   SET EMPLOYEE_NO = #{employeeNo}
+		 WHERE LOCATION_NO = #{locationNo}
+	</update>
+	
+</mapper>

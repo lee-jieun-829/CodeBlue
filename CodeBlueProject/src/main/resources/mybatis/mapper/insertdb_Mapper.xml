@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.master.drug.mapper.IInsertDBMapper">
+	<insert id="insertDrug" parameterType="list">
+		INSERT INTO DRUG (
+		        DRUG_NO,
+		        DRUG_CODE,
+		        DRUG_NAME,
+		        DRUG_AMOUNT,
+		        DRUG_COMPANY,
+		        DRUG_COST,
+		        DRUG_PRICE,
+		        DRUG_SAFTY_STOKE,
+		        DRUG_TYPE,
+		        DRUG_SPEC,
+		        DRUG_UNIT
+		    )
+		    SELECT SEQ_DRUG.NEXTVAL, A.* FROM (
+		        <foreach collection="list" item="item" separator=" UNION ALL ">
+		            SELECT
+		                  #{item.drugCode}
+		                , #{item.drugName}
+		                , #{item.drugAmount}
+		                , #{item.drugCompany}
+		                , #{item.drugCost}
+		                , #{item.drugPrice}
+		                , #{item.drugSaftyStoke}
+		                , #{item.drugType}
+		                , #{item.drugSpec}
+		                , #{item.drugUnit}
+		            FROM DUAL
+		        </foreach>
+		    ) A
+	</insert>
+	
+	<insert id="insertDiagnosis" parameterType="list">
+		INSERT INTO DIAGNOSIS (
+			DIAGNOSIS_NO,
+			DIAGNOSIS_CODE,
+			DIAGNOSIS_NAME
+			)
+	   		SELECT SEQ_DIAGNOSIS.NEXTVAL, A.* FROM (
+		        <foreach collection="list" item="item" separator=" UNION ALL ">
+		            SELECT
+		            #{item.diagnosisCode},
+		            #{item.diagnosisName}
+		            FROM DUAL
+		        </foreach>
+		    ) A
+	</insert>
+</mapper>

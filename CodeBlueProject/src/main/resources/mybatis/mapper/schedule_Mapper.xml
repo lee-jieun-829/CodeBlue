@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.schedule.mapper.IScheduleMapper">
+
+	
+	<select id="selectScheduleList" parameterType="int"
+		resultType="kr.or.ddit.cpr.schedule.vo.ScheduleAdminVO">
+		SELECT
+			SCHEDULE_NO AS scheduleNo,
+			SCHEDULE_TITLE AS title,
+			SCHEDULE_CONTENT AS description,
+			TO_CHAR(SCHEDULE_START, 'YYYY-MM-DD"T"HH24:MI') AS "start",
+			TO_CHAR(SCHEDULE_END, 'YYYY-MM-DD"T"HH24:MI') AS "end",
+			SCHEDULE_TYPE AS type,
+			EMPLOYEE_NO AS employeeNo,
+			BACKGROUND_COLOR AS backgroundColor,
+			0 AS allDay
+		FROM SCHEDULE
+		WHERE
+		1=1
+		<if test="employeeNo != 0">
+			AND (
+				EMPLOYEE_NO = #{employeeNo} 
+				OR SCHEDULE_TYPE = '001'
+			)
+		</if>
+	</select>
+
+	<insert id="insertSchedule" parameterType="kr.or.ddit.cpr.schedule.vo.ScheduleAdminVO">
+		<selectKey keyProperty="scheduleNo" resultType="int" order="BEFORE">
+            SELECT SEQ_SCHEDULE.NEXTVAL FROM DUAL
+        </selectKey>     
+
+        INSERT INTO SCHEDULE (
+            SCHEDULE_NO, 
+            SCHEDULE_TITLE, 
+            SCHEDULE_CONTENT, 
+            SCHEDULE_START, 
+            SCHEDULE_END, 
+            SCHEDULE_TYPE, 
+            EMPLOYEE_NO, 
+            BACKGROUND_COLOR,
+            SCHEDULE_DOCTOR_NO
+        ) VALUES (
+            #{scheduleNo},
+            #{title},
+            #{description},
+            TO_DATE(#{start}, 'YYYY-MM-DD"T"HH24:MI'),
+            TO_DATE(#{end},   'YYYY-MM-DD"T"HH24:MI'),            
+            #{type},
+            #{employeeNo},
+              
+            <choose>
+                <when test="type == '병원행사'"> '#BDDDE4' </when>
+                <when test="type == '수술'"> '#BDDDE4' </when>
+                <when test="type == '휴진'"> '#9EC6F3' </when>  
+                <when test="type == '시설점검'"> '#BDDDE4' </when>
+                <when test="type == '001'"> '#BDDDE4' </when> 
+                <otherwise> '#BDDDE4' </otherwise>
+            </choose>,
+            #{scheduleDoctorNo} 
+        )
+    </insert>
+
+	<update id="updateSchedule"
+		parameterType="kr.or.ddit.cpr.schedule.vo.ScheduleAdminVO">
+		UPDATE SCHEDULE
+		SET
+		SCHEDULE_TITLE = #{title},
+		SCHEDULE_CONTENT = #{description},
+		SCHEDULE_START = TO_DATE(#{start}, 'YYYY-MM-DD"T"HH24:MI'),
+		SCHEDULE_END = TO_DATE(#{end}, 'YYYY-MM-DD"T"HH24:MI'),
+		SCHEDULE_TYPE = #{type},
+		EMPLOYEE_NO = #{employeeNo},
+
+		BACKGROUND_COLOR =
+		<choose>
+			<when test="type == '병원행사'"> '#f59e0b' </when>
+			<when test="type == '수술'"> '#10b981' </when>
+			<when test="type == '휴진'"> '#fee2e2' </when>
+			<when test="type == '시설점검'"> '#64748b' </when>
+			<when test="type == '001'"> '#3b82f6' </when>
+			<otherwise> '#3b82f6' </otherwise>
+		</choose>
+
+		WHERE SCHEDULE_NO = #{scheduleNo}
+	</update>
+
+	<delete id="deleteSchedule" parameterType="int">
+		DELETE FROM SCHEDULE
+		WHERE SCHEDULE_NO = #{scheduleNo}
+	</delete>
+
+	<select id="selectDoctorList" resultType="map">
+		SELECT
+		EMPLOYEE_NO AS "employeeNo",
+		EMPLOYEE_NAME AS "empName"
+		FROM EMPLOYEE
+		WHERE EMPLOYEE_CODE = '1'
+	</select>
+
+</mapper>

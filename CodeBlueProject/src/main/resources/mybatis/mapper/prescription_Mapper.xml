@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.prescription.mapper.IPrescriptionMapper">
+	
+	<resultMap type="kr.or.ddit.cpr.vo.PredetailVO" id="predetailMap">
+		<id property="predetailNo" column="PREDETAIL_NO" />
+		<result property="predetailRegdate" column="PREDETAIL_REGDATE" />
+		<result property="predetailType" column="PREDETAIL_TYPE" />
+		<result property="chartNo" column="CHART_NO" />
+		<result property="predetailStatus" column="PREDETAIL_STATUS" />
+		
+		<result property="employeeNo" column="CHART_EMP_NO" />
+		
+		<collection property="drugList"  resultMap="drugMap"  notNullColumn="DRUG_NO" />
+	    <collection property="treatList" resultMap="treatMap" notNullColumn="TREATMENT_NO" />
+	    <collection property="examList"  resultMap="examMap"  notNullColumn="EXAMINATION_NO" />
+	    <collection property="operList"  resultMap="operMap"  notNullColumn="OPERATION_NO" />
+	    <collection property="dietList"  resultMap="dietMap"  notNullColumn="DIET_NO" />
+	</resultMap>
+	
+	<!-- 약품관련 resultmap -->
+	<resultMap type="kr.or.ddit.cpr.vo.DrugVO" id="drugMap">
+		<id property="predetailNo" column="PREDETAIL_NO" />
+		<id property="drugNo" column="DRUG_NO" />
+		<result property="predrugDetailDose" column="PREDRUG_DETAIL_DOSE"/>
+		<result property="predrugDetailFreq" column="PREDRUG_DETAIL_FREQ"/>
+		<result property="predrugDetailDay" column="PREDRUG_DETAIL_DAY"/>
+		<result property="predrugDetailMethod" column="PREDRUG_DETAIL_METHOD"/>
+		<result property="predrugDetailPharmtype" column="PREDRUG_DETAIL_PHARMTYPE"/>
+		<result property="predrugDetailStatus" column="PREDRUG_DETAIL_STATUS"/>
+		<result property="predrugDetailRemark" column="PREDRUG_DETAIL_REMARK"/>
+		<result property="predrugDetailType" column="PREDRUG_DETAIL_TYPE"/>
+		
+		<result property="drugType" column="DRUG_TYPE"/>
+		<result property="drugSpec" column="DRUG_SPEC"/>
+		<result property="drugUnit" column="DRUG_UNIT"/>
+		<result property="drugCode" column="DRUG_CODE"/>
+		<result property="drugName" column="DRUG_NAME"/>
+		<result property="drugAmount" column="DRUG_AMOUNT"/>
+		<result property="drugCompany" column="DRUG_COMPANY"/>
+		<result property="drugCost" column="DRUG_COST"/>
+		<result property="drugPrice" column="DRUG_PRICE"/>
+		<result property="drugSaftyStoke" column="DRUG_SAFTY_STOKE"/>
+	</resultMap>
+	
+	<!-- 치료관련 resultmap-->
+	<resultMap type="kr.or.ddit.cpr.vo.TreatmentVO" id="treatMap">
+		<id property="predetailNo" column="PREDETAIL_NO"/>
+		<id property="treatmentNo" column="TREATMENT_NO"/>
+		<result property="pretreatmentDetailMethod" column="PRETREATMENT_DETAIL_METHOD"/>
+		<result property="pretreatmentDetailStatus" column="PRETREATMENT_DETAIL_STATUS"/>
+		<result property="pretreatmentDetailRemark" column="PRETREATMENT_DETAIL_REMARK"/>
+		<result property="pretreatmentDetailDose" column="PRETREATMENT_DETAIL_DOSE"/>
+		<result property="pretreatmentDetailFreq" column="PRETREATMENT_DETAIL_FREQ"/>
+		<result property="pretreatmentDetailDay" column="PRETREATMENT_DETAIL_DAY"/>
+		
+		<result property="treatmentCode" column="TREATMENT_CODE"/>
+	    <result property="treatmentName" column="TREATMENT_NAME"/>
+	    <result property="treatmentPrice" column="TREATMENT_PRICE"/>
+	</resultMap>
+	
+	<!-- 검사관련 resultmap -->
+	<resultMap type="kr.or.ddit.cpr.vo.ExaminationVO" id="examMap">
+	
+		<id property="preexaminationNo" column="PREEXAMINATION_NO" />
+		
+	    <result property="predetailNo" column="PREDETAIL_NO" />
+	    <result property="examinationNo" column="EXAMINATION_NO" />
+	    
+	    <result property="preexaminationDetailFreq" column="PREEXAMINATION_DETAIL_FREQ"/>
+	    <result property="preexaminationDetailDay" column="PREEXAMINATION_DETAIL_DAY"/>
+	    <result property="attachmentNo" column="ATTACHMENT_NO"/>
+	    <result property="preexaminationDetailSite" column="PREEXAMINATION_DETAIL_SITE"/>
+	    <result property="preexaminationDetailStatus" column="PREEXAMINATION_DETAIL_STATUS"/>
+	    <result property="preexaminationDetailRemark" column="PREEXAMINATION_DETAIL_REMARK"/>
+	    <result property="preexaminationDetailLaterality" column="PREEXAMINATION_DETAIL_LATERALITY"/>
+	    
+	    <result property="examinationCode" column="EXAMINATION_CODE"/>
+	    <result property="examinationName" column="EXAMINATION_NAME"/>
+	    <result property="examinationPrice" column="EXAMINATION_PRICE"/>
+	</resultMap>
+	
+	<!-- 수술관련 resultmap  -->
+	<resultMap type="kr.or.ddit.cpr.vo.OperationVO" id="operMap">
+	    <id property="predetailNo" column="PREDETAIL_NO" />
+	    <id property="operationNo" column="OPERATION_NO" />
+	    
+	    <result property="preoperationRegdate" column="PREOPERATION_REGDATE"/>
+	    <result property="employeeNo" column="EMPLOYEE_NO"/>
+	    <result property="preoperationStatus" column="PREOPERATION_STATUS"/>
+	    <result property="preoperationYn" column="PREOPERATION_YN"/>
+	    
+	    <result property="operationCode" column="OPERATION_CODE"/>
+	    <result property="operationName" column="OPERATION_NAME"/>
+	    <result property="operationPrice" column="OPERATION_PRICE"/>
+	</resultMap>
+	
+	<!-- 식이관련 resultmap -->
+	<resultMap type="kr.or.ddit.cpr.vo.DietVO" id="dietMap">
+	    <id property="predetailNo" column="PREDETAIL_NO" />
+	    <id property="dietNo" column="DIET_NO" />
+	    
+	    <result property="predietDose" column="PREDIET_DOSE"/>
+	    <result property="predietFreq" column="PREDIET_FREQ"/>
+	    <result property="predietDay" column="PREDIET_DAY"/>
+	    <result property="predietStatus" column="PREDIET_STATUS"/>
+	    
+	    <result property="dietCode" column="DIET_CODE"/>
+	    <result property="dietName" column="DIET_NAME"/>
+	    <result property="dietType" column="DIET_TYPE"/>
+	    <result property="dietPrice" column="DIET_PRICE"/>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.cpr.vo.ChartListVO" id="chartListVOMap">
+		<id property="chartNo" column="CHART_NO" />
+		<result property="employeeName" column="EMPLOYEE_NAME" />
+		<association property="chartVO" javaType="kr.or.ddit.cpr.vo.ChartVO">
+			<id property="chartNo" column="CHART_NO" />
+			<result property="chartContent" column="CHART_CONTENT" />
+			<result property="chartRegdate" column="CHART_REGDATE" />
+			<result property="employeeNo" column="EMPLOYEE_NO" />
+			<result property="patientNo" column="PATIENT_NO" />
+			<result property="registrationNo" column="REGISTRATION_NO" />
+			<result property="admissionNo" column="ADMISSION_NO" />
+			<result property="predetailCnt" column="PREDETAIL_CNT" />
+			<collection property="diagnosis" resultMap="diagMap"></collection>
+		</association>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.cpr.vo.DiagnosisVO" id="diagMap">
+		<id property="diagnosisNo" column="DIAGNOSIS_NO" />
+		<result property="diagnosisCode" column="DIAGNOSIS_CODE" />
+		<result property="diagnosisName" column="DIAGNOSIS_NAME" />
+		<result property="chartNo" column="CHART_NO" />
+		<result property="diagnosisDetailYN" column="DIAGNOSIS_DETAIL_YN" />
+		
+	</resultMap>
+	
+	<select id="selectChartList" parameterType="int" resultMap="chartListVOMap">
+		SELECT
+		    C.CHART_NO
+		  , C.CHART_CONTENT
+		  , C.CHART_REGDATE
+		  , C.EMPLOYEE_NO
+		  , C.PATIENT_NO
+		  , C.REGISTRATION_NO
+		  , C.ADMISSION_NO
+		  , (SELECT COUNT(*) FROM PREDETAIL P WHERE P.CHART_NO = C.CHART_NO) AS PREDETAIL_CNT
+		  , (SELECT EMPLOYEE_NAME FROM EMPLOYEE WHERE EMPLOYEE_NO = C.EMPLOYEE_NO) AS EMPLOYEE_NAME
+		  , DD.DIAGNOSIS_NO
+		  , DD.DIAGNOSIS_DETAIL_YN
+		  , D.DIAGNOSIS_NAME
+		  , D.DIAGNOSIS_CODE
+		FROM
+		    CHART C
+		LEFT OUTER JOIN 
+		    DIAGNOSIS_DETAIL DD ON DD.CHART_NO = C.CHART_NO
+		LEFT OUTER JOIN 
+		    DIAGNOSIS D ON D.DIAGNOSIS_NO = DD.DIAGNOSIS_NO
+		WHERE PATIENT_NO = #{patientNo}
+		ORDER BY CHART_NO DESC
+	</select>
+	
+	<select id="selectPredetailList" parameterType="kr.or.ddit.cpr.vo.ChartVO" resultMap="predetailMap">
+		SELECT
+		
+			C.EMPLOYEE_NO AS CHART_EMP_NO
+		  -- 처방 
+		  , P.PREDETAIL_NO
+		  , P.PREDETAIL_REGDATE
+		  , P.PREDETAIL_TYPE
+		  , P.CHART_NO
+		  , P.PREDETAIL_STATUS
+		  
+		  -- 약품 디테일
+		  , PD.DRUG_NO
+		  , PD.PREDRUG_DETAIL_DOSE
+		  , PD.PREDRUG_DETAIL_FREQ
+		  , PD.PREDRUG_DETAIL_DAY
+		  , PD.PREDRUG_DETAIL_METHOD
+		  , PD.PREDRUG_DETAIL_PHARMTYPE
+		  , PD.PREDRUG_DETAIL_STATUS
+		  , PD.PREDRUG_DETAIL_REMARK
+		  , PD.PREDRUG_DETAIL_TYPE
+		  -- 약품
+		  , D1.DRUG_CODE
+		  , D1.DRUG_NAME
+		  , D1.DRUG_AMOUNT
+		  , D1.DRUG_COMPANY
+		  , D1.DRUG_COST
+		  , D1.DRUG_PRICE
+		  , D1.DRUG_SAFTY_STOKE
+		  , D1.DRUG_TYPE
+		  , D1.DRUG_SPEC
+		  , D1.DRUG_UNIT
+		  
+		  -- 치료 디테일
+		  , TD.TREATMENT_NO
+		  , TD.PRETREATMENT_DETAIL_DOSE
+		  , TD.PRETREATMENT_DETAIL_FREQ
+		  , TD.PRETREATMENT_DETAIL_DAY
+		  , TD.PRETREATMENT_DETAIL_METHOD
+		  , TD.PRETREATMENT_DETAIL_STATUS
+		  , TD.PRETREATMENT_DETAIL_REMARK
+		  -- 치료
+		  , T1.TREATMENT_CODE
+		  , T1.TREATMENT_NAME
+		  , T1.TREATMENT_PRICE
+		  
+		  -- 검사 디테일
+		  , ED.EXAMINATION_NO
+		  , ED.PREEXAMINATION_DETAIL_FREQ
+		  , ED.PREEXAMINATION_DETAIL_DAY
+		  , ED.ATTACHMENT_NO
+		  , ED.PREEXAMINATION_DETAIL_SITE
+		  , ED.PREEXAMINATION_DETAIL_STATUS
+		  , ED.PREEXAMINATION_DETAIL_REMARK
+		  , ED.PREEXAMINATION_DETAIL_LATERALITY
+		  -- 검사
+		  , E1.EXAMINATION_CODE
+		  , E1.EXAMINATION_NAME
+		  , E1.EXAMINATION_PRICE
+		  
+		  -- 수술 디테일
+		  , PO.OPERATION_NO
+		  , PO.PREOPERATION_REGDATE
+		  , PO.EMPLOYEE_NO
+		  , PO.PREOPERATION_STATUS
+		  , PO.PREOPERATION_YN
+		  -- 수술
+		  , O1.OPERATION_CODE
+		  , O1.OPERATION_NAME
+		  , O1.OPERATION_PRICE
+		  
+		  -- 식이 디테일
+		  , D.DIET_NO
+		  , D.PREDIET_DOSE
+		  , D.PREDIET_FREQ
+		  , D.PREDIET_DAY
+		  , D.PREDIET_STATUS
+		  --식이
+		  , D2.DIET_CODE
+		  , D2.DIET_NAME
+		  , D2.DIET_TYPE
+		  , D2.DIET_PRICE
+		FROM
+		    CHART C
+		INNER JOIN 
+		    PREDETAIL P ON P.CHART_NO = C.CHART_NO
+		LEFT OUTER JOIN PREDRUG_DETAIL PD ON PD.PREDETAIL_NO = P.PREDETAIL_NO
+		LEFT OUTER JOIN DRUG D1 ON D1.DRUG_NO = PD.DRUG_NO
+		LEFT OUTER JOIN PRETREATMENT_DETAIL TD ON TD.PREDETAIL_NO = P.PREDETAIL_NO
+		LEFT OUTER JOIN TREATMENT T1 ON T1.TREATMENT_NO = TD.TREATMENT_NO
+		LEFT OUTER JOIN PREEXAMINATION_DETAIL ED ON ED.PREDETAIL_NO = P.PREDETAIL_NO
+		LEFT OUTER JOIN EXAMINATION E1 ON E1.EXAMINATION_NO = ED.EXAMINATION_NO
+		LEFT OUTER JOIN PREOPERATION PO ON PO.PREDETAIL_NO = P.PREDETAIL_NO
+		LEFT OUTER JOIN OPERATION O1 ON O1.OPERATION_NO = PO.OPERATION_NO
+		LEFT OUTER JOIN PREDIET D ON D.PREDETAIL_NO = P.PREDETAIL_NO
+		LEFT OUTER JOIN DIET D2 ON D2.DIET_NO = D.DIET_NO
+		WHERE P.CHART_NO = #{chartNo}
+
+	</select>
+</mapper>

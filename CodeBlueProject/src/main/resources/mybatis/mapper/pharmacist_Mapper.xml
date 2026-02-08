@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.execution.pharmacist.mapper.IPharmacistMapper">
+
+	<resultMap id="pharmacistOrderMap" type="kr.or.ddit.cpr.vo.PharmacistOrderVO">
+	    <id property="predetailNo" column="PREDETAIL_NO" />
+	    
+	    <result property="predetailRegdate" column="PREDETAIL_REGDATE" />
+	    <result property="chartNo" column="CHART_NO" />
+	    <result property="patientNo" column="PATIENT_NO" />
+	    <result property="patientName" column="PATIENT_NAME" />
+	    <result property="patientAge" column="PATIENT_AGE" />
+	    <result property="patientGen" column="PATIENT_GEN" />
+	    <result property="patientMemo" column="PATIENT_MEMO" />
+	    <result property="admissionNo" column="ADMISSION_NO" />
+	    <result property="roomNo" column="ROOM_NO" />
+	    <result property="employeeNo" column="EMPLOYEE_NO" />
+	    <result property="employeeName" column="EMPLOYEE_NAME" />
+	    <result property="drugNames" column="DRUG_NAMES" />
+	    <result property="predrugDetailStatus" column="PREDRUG_DETAIL_STATUS" />
+	    <result property="stockOutFlag" column="STOCK_OUT_FLAG" />
+	    
+	    <collection property="drugList" ofType="kr.or.ddit.cpr.vo.DrugVO">
+	        <id property="drugNo" column="DRUG_NO" />
+	        <result property="drugCode" column="DRUG_CODE" />
+	        <result property="drugName" column="DRUG_NAME" />
+	        <result property="drugAmount" column="DRUG_AMOUNT" />
+	        <result property="drugCompany" column="DRUG_COMPANY" />
+	        <result property="drugCost" column="DRUG_COST" />
+	        <result property="drugPrice" column="DRUG_PRICE" />
+	        <result property="drugSaftyStoke" column="DRUG_SAFTY_STOKE" />
+	        <result property="drugType" column="DRUG_TYPE" />
+	        <result property="drugSpec" column="DRUG_SPEC" />
+	        <result property="drugUnit" column="DRUG_UNIT" />
+	        
+	        <result property="drugTotal" column="DRUG_TOTAL" />
+	    	<result property="stockStatus" column="STOCK_STATUS" />
+	        
+	        <result property="predetailNo" column="PREDETAIL_NO" />
+	        <result property="predrugDetailDose" column="PREDRUG_DETAIL_DOSE" />
+	        <result property="predrugDetailFreq" column="PREDRUG_DETAIL_FREQ" />
+	        <result property="predrugDetailDay" column="PREDRUG_DETAIL_DAY" />
+	        <result property="predrugDetailMethod" column="PREDRUG_DETAIL_METHOD" />
+	        <result property="predrugDetailPharmtype" column="PREDRUG_DETAIL_PHARMTYPE" />
+	        <result property="predrugDetailRemark" column="PREDRUG_DETAIL_REMARK" />
+	        <result property="predrugDetailType" column="PREDRUG_DETAIL_TYPE" />
+	    </collection>
+	</resultMap>
+
+	<select id="getWaitingList" parameterType="string" resultMap="pharmacistOrderMap">
+		SELECT
+		    a.predetail_no
+		  , TO_CHAR(a.predetail_regdate, 'HH24:MI') as predetail_regdate
+		  , b.chart_no, b.patient_no, c.patient_name
+		  , d.employee_no, d.employee_name, g.drug_names
+		  , (
+		    SELECT common_detail_comment
+		    FROM common_detail
+		    WHERE common_detail_name = g.predrug_detail_status
+		    AND common_no = '9'
+		  ) as predrug_detail_status
+		  , g.stock_out_flag, g.predrug_detail_pharmtype
+		  , e.admission_no, f.room_no
+		FROM predetail a
+		INNER JOIN chart b ON a.chart_no = b.chart_no
+		INNER JOIN patient c ON b.patient_no = c.patient_no
+		INNER JOIN employee d ON b.employee_no = d.employee_no
+		INNER JOIN admission e ON b.admission_no = e.admission_no
+		INNER JOIN bed f ON e.bed_no = f.bed_no
+		INNER JOIN (
+		    SELECT 
+	            pd.predetail_no, 
+	            pd.predrug_detail_status,
+	            pd.predrug_detail_pharmtype,
+	            LISTAGG(dr.drug_name, ', ') WITHIN GROUP (ORDER BY dr.drug_name) as drug_names,
+	            /* 핵심: 현재고(dr.drug_amount)를 기준으로 재고 부족('Y') 판단 */
+	            MAX(CASE 
+	           	<![CDATA[ 
+	                WHEN dr.drug_amount < (pd.predrug_detail_dose * pd.predrug_detail_freq * pd.predrug_detail_day) THEN 'Y' -- 조제불가
+	                WHEN (dr.drug_amount - (pd.predrug_detail_dose * pd.predrug_detail_freq * pd.predrug_detail_day)) < dr.drug_safty_stoke THEN 'Y' -- 안전재고부족
+	                ELSE 'N' 
+	            ]]>
+	            END) as stock_out_flag
+	        FROM predrug_detail pd
+	        LEFT OUTER JOIN drug dr ON pd.drug_no = dr.drug_no
+	        WHERE (pd.predrug_detail_pharmtype IS NULL OR pd.predrug_detail_pharmtype = 'N')
+	        <![CDATA[
+	        		AND pd.predrug_detail_status <> '004' 
+	        ]]>
+            AND (pd.predrug_detail_type IS NULL OR pd.predrug_detail_type = 'Y') 
+	        GROUP BY pd.predetail_no, pd.predrug_detail_status, pd.predrug_detail_pharmtype
+		) g ON a.predetail_no = g.predetail_no
+		WHERE TRUNC(a.predetail_regdate) = TRUNC(SYSDATE)
+			AND a.predetail_type = '001'
+		<![CDATA[ 
+			AND g.predrug_detail_status <> '004'
+		]]>
+		ORDER BY 
+		    CASE 
+		        WHEN g.predrug_detail_status = '003' THEN 1
+		        WHEN g.predrug_detail_status = '002' THEN 2
+		        WHEN g.predrug_detail_status = '001' THEN 3
+		        ELSE 4                                       
+		    END ASC,
+		    a.predetail_regdate ASC
+	</select>
+
+	<update id="updateWaitingStatus">
+	    UPDATE predrug_detail
+	    SET predrug_detail_status = (
+	        SELECT a.common_detail_name 
+	        FROM common_detail a
+	        WHERE a.common_no = '9' 
+	          AND a.common_detail_comment = #{preDrugdetailStatus}
+	          AND ROWNUM = 1  /* 혹시 모를 중복 방지 */
+	    )
+	    WHERE predetail_no = #{predetailNo}
+	</update>
+	
+	<select id="getPatientDetail" parameterType="long" resultType="kr.or.ddit.cpr.vo.PharmacistOrderVO">
+		SELECT
+		    a.predetail_no
+		  , TO_CHAR(a.predetail_regdate, 'YYYY-MM-DD HH24:MI') as predetail_regdate
+		  , b.chart_no
+		  , c.patient_no, c.patient_name, c.patient_memo
+		  , TRUNC(MONTHS_BETWEEN(SYSDATE, TO_DATE(
+		        CASE
+		            WHEN SUBSTR(c.patient_regno2, 1, 1) IN('1', '2', '5', '6') THEN '19'
+		            WHEN SUBSTR(c.patient_regno2, 1, 1) IN('3', '4', '7', '8') THEN '20'
+		        END || c.patient_regno1, 'YYYYMMDD')) / 12) AS patient_age
+		  , CASE 
+		        WHEN c.patient_gen = 'MALE' THEN 'M'
+		        WHEN c.patient_gen = 'FEMALE' THEN 'F'
+		    END AS patient_gen
+		  , (
+		    SELECT ep.employee_name
+		    FROM employee ep
+		    WHERE b.employee_no = ep.employee_no
+		  ) AS employee_name
+		FROM predetail a
+		INNER JOIN chart b ON a.chart_no = b.chart_no
+		INNER JOIN patient c ON b.patient_no = c.patient_no
+		WHERE a.predetail_no = #{predetailNo}
+	</select>
+
+	<select id="getOrderDrugList" parameterType="long" resultType="kr.or.ddit.cpr.vo.DrugVO">
+	    SELECT
+	          a.predetail_no
+	        , b.drug_no, c.drug_code, c.drug_name
+	        , b.predrug_detail_dose, b.predrug_detail_freq, b.predrug_detail_day
+	        , (b.predrug_detail_dose * b.predrug_detail_freq * b.predrug_detail_day) AS drug_total
+	        , b.predrug_detail_method, c.drug_amount, c.drug_safty_stoke
+	        , (
+			    SELECT common_detail_comment
+			    FROM common_detail
+			    WHERE common_detail_name = b.predrug_detail_status
+			    AND common_no = '9'
+		  	) as predrug_detail_status
+	    FROM predetail a
+	    INNER JOIN predrug_detail b ON a.predetail_no = b.predetail_no
+	    INNER JOIN drug c ON b.drug_no = c.drug_no
+	    WHERE a.predetail_no = #{predetailNo}
+		  <![CDATA[ 
+		  	AND b.predrug_detail_status <> '004'
+		  ]]>
+	      AND a.predetail_type = '001'
+	      AND (b.predrug_detail_pharmtype IS NULL OR b.predrug_detail_pharmtype = 'N')
+	      AND (b.predrug_detail_type IS NULL OR b.predrug_detail_type = 'Y')    
+	</select>
+	
+	<update id="updatePrescriptionStatus" parameterType="long">
+	    UPDATE predrug_detail
+	       SET predrug_detail_status = '001'
+	     WHERE predetail_no = #{predetailNo}
+	       AND (predrug_detail_pharmtype IS NULL OR predrug_detail_pharmtype = 'N')
+	</update>
+	
+	<update id="decreaseDrugStock" parameterType="kr.or.ddit.cpr.vo.DrugVO">
+	    UPDATE drug
+	       SET drug_amount = drug_amount - #{drugTotal}
+	     WHERE drug_no = #{drugNo}
+	       /* 재고가 충분한 경우에만 업데이트 수행 (실패 시 0 반환되어 서비스에서 예외 처리) */
+	       AND drug_amount >= #{drugTotal}
+	</update>
+</mapper>

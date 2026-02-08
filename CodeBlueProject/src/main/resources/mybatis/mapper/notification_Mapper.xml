@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.notification.mapper.INotificationMapper">
+	
+	<!-- 수신자별 안읽은 알림 조회 -->
+	<select id="selectNotificationList" parameterType="int" resultType="kr.or.ddit.cpr.vo.AlertVO">
+        SELECT 
+              alert_no
+            , alert_type
+            , alert_content
+            , alert_read_yn
+            , employee_no
+            , alert_name
+            , TO_CHAR(alert_date, 'YYYY-MM-DD HH24:MI') AS alert_date
+            , alert_url
+            , alert_urgent
+        FROM alert
+        WHERE employee_no = #{employeeNo}
+          AND alert_read_yn = 'N'
+        ORDER BY alert_no DESC
+    </select>
+
+	<!-- 알림 개별 읽음 처리 -->
+    <update id="updateNotificationRead" parameterType="int">
+        UPDATE alert
+           SET alert_read_yn = 'Y'
+         WHERE alert_no = #{alertNo}
+    </update>
+
+	<!-- 전체 알림 일괄 읽음 처리 -->
+    <update id="updateAllNotificationRead" parameterType="int">
+        UPDATE alert
+           SET alert_read_yn = 'Y'
+         WHERE employee_no = #{employeeNo}
+           AND alert_read_yn = 'N'
+    </update>
+
+	<!-- 새로운 알림 생성(알림 보낼 때 사용) -->
+    <insert id="insertNotification" parameterType="kr.or.ddit.cpr.vo.AlertVO">
+        <selectKey keyProperty="alertNo" resultType="int" order="BEFORE">
+            SELECT NVL(MAX(alert_no), 0) + 1 FROM alert
+        </selectKey>
+        INSERT INTO alert (
+              alert_no
+            , alert_type
+            , alert_content
+            , alert_read_yn
+            , employee_no
+            , alert_name
+            , alert_date
+            , alert_url
+            , alert_urgent
+        ) VALUES (
+              #{alertNo}
+            , #{alertType}
+            , #{alertContent}
+            , 'N'
+            , #{employeeNo}
+            , #{alertName}
+            , SYSDATE
+            , NVL(#{alertUrl}, '#')
+            , NVL(#{alertUrgent}, 'N')
+        )
+    </insert>
+	
+	<!-- 전체 알림 저장 -->
+	<insert id="insertNotificationToAll" parameterType="kr.or.ddit.cpr.vo.AlertVO">
+	    INSERT INTO alert (
+	          alert_no
+	        , alert_type
+	        , alert_content
+	        , alert_read_yn
+	        , employee_no
+	        , alert_name
+	        , alert_date
+	        , alert_url
+	        , alert_urgent
+	    )
+	    SELECT 
+	          (SELECT NVL(MAX(alert_no), 0) FROM alert) + ROWNUM /*번호 자동 생성*/
+	        , #{alertType}
+	        , #{alertContent}
+	        , 'N'
+	        , employee_no /*직원 테이블의 모든 사번을 대상으로 함*/
+	        , #{alertName}
+	        , SYSDATE
+	        , NVL(#{alertUrl}, '#') /* NULL 방어 조치 추가 */
+        	, NVL(#{alertUrgent}, 'N') /* NULL 방어 조치 추가 */
+	    FROM employee 
+	    WHERE employee_status = '001' /*재직 중인 직원에게만 발송*/
+	    	AND employee_no != #{senderNo}
+	</insert>
+	
+	<!-- 부서 알림 - 해당 부서 사번 조회 -->
+	<select id="selectEmpNoListByDept" resultType="int">
+		SELECT employee_no 
+		FROM employee
+		WHERE employee_code = #{employeeCode}
+		AND employee_status = '001'
+	</select>
+</mapper>

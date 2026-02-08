@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.admin.mapper.INoticeMapper">
+
+	<resultMap type="kr.or.ddit.cpr.admin.vo.NoticeVO"
+		id="noticeMap">
+		<id property="noticeNo" column="NOTICE_NO" />
+		<result property="noticeNo" column="NOTICE_NO" />
+		<result property="noticeTitle" column="NOTICE_TITLE" />
+		<result property="noticeContent" column="NOTICE_CONTENT" />
+		<result property="noticeRegDate" column="NOTICE_REGDATE" />
+		<result property="noticeImportant" column="NOTICE_IMPORTANT" />
+		<result property="employeeNo" column="EMPLOYEE_NO" />
+		<result property="adminName" column="adminName" />
+		<collection property="fileList"
+			resultMap="attachmentDetailMap" />
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.cpr.vo.AttachmentDetailVO"
+		id="attachmentDetailMap">
+		<id property="attachmentDetailNo" column="ATTACHMENT_DETAIL_NO" />
+		<result property="attachmentDetailNo"
+			column="ATTACHMENT_DETAIL_NO" />
+		<result property="attachmentDetailName"
+			column="ATTACHMENT_DETAIL_NAME" />
+		<result property="attachmentDetailMime"
+			column="ATTACHMENT_DETAIL_MIME" />
+		<result property="attachmentDetailDate"
+			column="ATTACHMENT_DETAIL_DATE" />
+		<result property="attachmentDetailPath"
+			column="ATTACHMENT_DETAIL_PATH" />
+		<result property="attachmentDetailExt"
+			column="ATTACHMENT_DETAIL_EXT" />
+		<result property="attachmentDetailSize"
+			column="ATTACHMENT_DETAIL_SIZE" />
+		<result property="attachmentNo" column="ATTACHMENT_NO" />
+	</resultMap>
+
+	<select id="selectNoticeList"
+		resultType="kr.or.ddit.cpr.admin.vo.NoticeVO">
+		SELECT
+		NOTICE_NO AS noticeNo,
+		NOTICE_TITLE AS noticeTitle,
+		NOTICE_IMPORTANT AS noticeImportant,
+		NOTICE_REGDATE AS noticeRegDate,
+		EMPLOYEE_NO AS employeeNo,
+		(SELECT EMPLOYEE_NAME
+		FROM EMPLOYEE
+		WHERE
+		EMPLOYEE_NO = NOTICE.EMPLOYEE_NO) AS adminName,
+		FILE_NO AS fileNo,
+		NOTICE_CONTENT AS noticeContent
+		FROM NOTICE
+		ORDER BY NOTICE_NO DESC
+	</select>
+
+	<select id="selectNotice" parameterType="int"
+		resultMap="noticeMap">
+		select
+		notice_no, notice_title, notice_important,
+		notice_regdate, employee_no, EMPLOYEE_NO AS employeeNo,
+		(select
+		employee_name
+		from employee
+		where employee_no = n.employee_no) AS
+		adminName, notice_content,
+		attachment_detail_no,
+		attachment_detail_name, attachment_detail_mime,
+		attachment_detail_date, attachment_detail_path, attachment_detail_ext,
+		attachment_detail_size,a.attachment_no
+		from notice n left outer join
+		attachment a on(n.file_no = a.attachment_no)
+		left outer join
+		attachment_detail ad on(a.attachment_no =
+		ad.attachment_no)
+		where
+		notice_no = #{noticeno}
+	</select>
+
+	<insert id="insertNotice"
+		parameterType="kr.or.ddit.cpr.admin.vo.NoticeVO">
+		INSERT INTO NOTICE (
+		NOTICE_NO,
+		NOTICE_TITLE,
+		NOTICE_CONTENT,
+		NOTICE_REGDATE,
+		FILE_NO,
+		NOTICE_IMPORTANT,
+		EMPLOYEE_NO
+		)
+		VALUES (
+		SEQ_NOTICE.NEXTVAL,
+		#{noticeTitle},
+		#{noticeContent},
+		SYSDATE,
+		<choose>
+			<when test="fileNo != 0"> #{fileNo} </when>
+			<otherwise> NULL </otherwise>
+		</choose>
+		,
+		#{noticeImportant},
+		#{employeeNo}
+		)
+	</insert>
+
+	<update id="updateNotice"
+		parameterType="kr.or.ddit.cpr.admin.vo.NoticeVO">
+		UPDATE NOTICE
+		SET
+		NOTICE_TITLE = #{noticeTitle},
+		NOTICE_CONTENT = #{noticeContent},
+		NOTICE_IMPORTANT = #{noticeImportant},
+		FILE_NO =
+		<choose>
+			<when test="fileNo != 0"> #{fileNo} </when>
+			<otherwise> FILE_NO </otherwise>
+		</choose>
+		WHERE NOTICE_NO = #{noticeNo}
+	</update>
+
+	<delete id="deleteNotice" parameterType="int">
+		DELETE FROM NOTICE
+		WHERE
+		NOTICE_NO = #{noticeNo}
+	</delete>
+
+	<insert id="insertAttachment"
+		parameterType="kr.or.ddit.cpr.vo.AttachmentVO"
+		useGeneratedKeys="true" keyProperty="attachmentNo">
+		<selectKey keyProperty="attachmentNo" resultType="int"
+			order="BEFORE">
+			SELECT SEQ_ATTACHMENT.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO ATTACHMENT(
+		ATTACHMENT_NO,
+		ATTACHMENT_DATE
+		) VALUES (
+		#{attachmentNo},
+		SYSDATE
+		)
+	</insert>
+
+	<insert id="insertAttachmentDetail"
+		parameterType="kr.or.ddit.cpr.vo.AttachmentDetailVO">
+		INSERT INTO ATTACHMENT_DETAIL (
+		ATTACHMENT_DETAIL_NO,
+		ATTACHMENT_NO,
+		ATTACHMENT_DETAIL_NAME,
+		ATTACHMENT_DETAIL_MIME,
+		ATTACHMENT_DETAIL_PATH,
+		ATTACHMENT_DETAIL_EXT,
+		ATTACHMENT_DETAIL_SIZE,
+		ATTACHMENT_DETAIL_DATE
+		) VALUES (
+		SEQ_ATTACHMENT_DETAIL.NEXTVAL,	
+		#{attachmentNo},
+		#{attachmentDetailName},
+		#{attachmentDetailMime},
+		#{attachmentDetailPath},
+		#{attachmentDetailExt},
+		#{attachmentDetailSize},
+		SYSDATE
+		)
+	</insert>
+
+	<select id="selectFileDetail" parameterType="int"
+		resultType="kr.or.ddit.cpr.vo.AttachmentDetailVO">
+		SELECT
+		ATTACHMENT_DETAIL_NO,
+		ATTACHMENT_NO,
+		ATTACHMENT_DETAIL_NAME,
+		ATTACHMENT_DETAIL_MIME,
+		ATTACHMENT_DETAIL_SIZE,
+		ATTACHMENT_DETAIL_PATH
+		FROM ATTACHMENT_DETAIL
+		WHERE ATTACHMENT_DETAIL_NO
+		= #{fileNo}
+	</select>
+
+	<delete id="deleteAttachmentDetail" parameterType="int">
+		DELETE FROM
+		ATTACHMENT_DETAIL
+		WHERE ATTACHMENT_DETAIL_NO = #{attachmentDetailNo}
+	</delete>
+
+</mapper>

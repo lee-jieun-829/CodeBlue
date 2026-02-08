@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.outpatient.mapper.IPatientMapper">
+	
+	<!-- 상병명 가져오기  -->
+	<select id="selectDiagnosisList" resultType="kr.or.ddit.cpr.vo.DiagnosisVO" parameterType="string">
+		SELECT *
+		FROM
+			(
+			SELECT 
+				   DIAGNOSIS_NO,
+				   DIAGNOSIS_CODE,
+				   DIAGNOSIS_NAME
+			FROM   DIAGNOSIS
+			WHERE  1=1
+		<if test="searchWord != null and searchWord != ''">
+			AND    (DIAGNOSIS_CODE LIKE '%'|| #{searchWord} || '%'
+			OR     DIAGNOSIS_NAME LIKE '%'|| #{searchWord} || '%')
+		</if>
+			ORDER  BY DIAGNOSIS_NO ASC
+			)
+		<![CDATA[
+		WHERE ROWNUM <= 100
+		]]>
+	</select>
+	
+	<!-- 약품명 가져오기  -->
+	<select id="selectDrugList" resultType="kr.or.ddit.cpr.vo.DrugVO" parameterType="string">
+		SELECT * 
+		FROM		
+			(
+			SELECT
+				    DRUG_NO
+				  , DRUG_CODE
+				  , DRUG_NAME
+				  , DRUG_AMOUNT
+				  , DRUG_COMPANY
+				  , DRUG_COST
+				  , DRUG_PRICE
+				  , DRUG_SAFTY_STOKE
+				  , DRUG_TYPE
+				  , DRUG_SPEC
+				  , DRUG_UNIT
+			FROM    DRUG
+			WHERE 1=1
+		<if test="searchWord != null and searchWord != ''">
+			AND (DRUG_NAME LIKE '%' || #{searchWord} || '%'
+			OR   DRUG_CODE LIKE '%' || #{searchWord} || '%')
+		</if>
+			AND DRUG_TYPE != '주사'
+			ORDER BY DRUG_NO ASC
+			)
+		<![CDATA[
+		WHERE ROWNUM <= 100
+		]]>
+	</select>
+	
+	<!-- 치료명 가져오기  -->
+	<select id="selectTreatmentList" resultType="kr.or.ddit.cpr.vo.TreatmentVO" parameterType="string">
+		SELECT *
+		FROM
+			(
+			SELECT
+				    TREATMENT_NO
+				  , TREATMENT_CODE
+				  , TREATMENT_NAME
+				  , TREATMENT_PRICE
+			FROM    TREATMENT
+			WHERE 1=1
+		<if test="searchWord != null and searchWord != ''">
+			AND  (TREATMENT_CODE LIKE '%' || #{searchWord} || '%'
+			OR	  TREATMENT_NAME LIKE '%' || #{searchWord} || '%')
+		</if>
+			ORDER BY TREATMENT_NO ASC
+			)
+		<![CDATA[
+		WHERE ROWNUM <= 100
+		]]>
+			
+	</select>
+	
+	<!-- 약품처방디테일 삽입  O -->
+	<!-- 약품타입 같은경우에는 주사/내복/외복약인걸   -->
+	<insert id="insertPredrugDetail" parameterType="kr.or.ddit.cpr.vo.DrugVO">
+		INSERT INTO PREDRUG_DETAIL (
+		    DRUG_NO
+		    , PREDETAIL_NO
+		    , PREDRUG_DETAIL_DOSE
+		    , PREDRUG_DETAIL_FREQ
+		    , PREDRUG_DETAIL_DAY
+		    , PREDRUG_DETAIL_METHOD
+		    , PREDRUG_DETAIL_PHARMTYPE
+		    , PREDRUG_DETAIL_STATUS
+		    , PREDRUG_DETAIL_TYPE
+		) VALUES (
+		    #{drugNo}
+		  , #{predetailNo}
+		  , #{predrugDetailDose}
+		  , #{predrugDetailFreq}
+		  , #{predrugDetailDay}
+		  , #{predrugDetailMethod}
+		  , #{predrugDetailPharmtype}
+		  , #{predrugDetailStatus}
+		  , #{predrugDetailType}
+		)
+	</insert>
+	
+	<!-- 처방 테이블 삽입  O -->
+	<insert id="insertPredetail" parameterType="kr.or.ddit.cpr.vo.PredetailVO">
+		<selectKey keyProperty="predetailNo" resultType="int" order="BEFORE" >
+			SELECT SEQ_PREDETAIL.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO PREDETAIL (
+		    PREDETAIL_NO
+		    , PREDETAIL_REGDATE
+		    , CHART_NO
+		    , PREDETAIL_STATUS
+		    , PREDETAIL_TYPE
+		) VALUES (
+		    #{predetailNo}
+		  , SYSDATE
+		  , #{chartNo}
+		  , #{predetailStatus}
+		  , #{predetailType}
+		)
+		
+	</insert>
+	
+	<!-- 치료 테이블 삽입  O -->
+	<insert id="insertTreatMent" parameterType="kr.or.ddit.cpr.vo.TreatmentVO">
+		INSERT INTO PRETREATMENT_DETAIL (
+		    PREDETAIL_NO
+		    , TREATMENT_NO
+		    , PRETREATMENT_DETAIL_DOSE
+		    , PRETREATMENT_DETAIL_FREQ
+		    , PRETREATMENT_DETAIL_DAY
+		    , PRETREATMENT_DETAIL_METHOD
+		    , PRETREATMENT_DETAIL_STATUS
+		) VALUES (
+		    #{predetailNo}
+		  , #{treatmentNo}
+		  , #{pretreatmentDetailDose}
+		  , #{pretreatmentDetailFreq}
+		  , #{pretreatmentDetailDay}
+		  , #{pretreatmentDetailMethod}
+		  , #{pretreatmentDetailStatus}
+		)
+	</insert>
+	
+	<!-- 검사 테이블 삽입  -->
+	<insert id="insertPreExamination" parameterType="kr.or.ddit.cpr.vo.ExaminationVO">
+		INSERT INTO PREEXAMINATION_DETAIL (
+		    PREEXAMINATION_NO
+		    , PREDETAIL_NO
+		    , EXAMINATION_NO
+		    , PREEXAMINATION_DETAIL_FREQ
+		    , PREEXAMINATION_DETAIL_DAY
+		    , PREEXAMINATION_DETAIL_SITE
+		    , PREEXAMINATION_DETAIL_STATUS
+		    , PREEXAMINATION_DETAIL_LATERALITY
+		) VALUES (
+		  	seq_PREEXAMINATION_DETAIL.nextval
+		  , #{predetailNo}
+		  , #{examinationNo}
+		  , #{preexaminationDetailFreq}
+		  , #{preexaminationDetailDay}
+		  , #{preexaminationDetailSite}
+		  , #{preexaminationDetailStatus}
+		  , #{preexaminationDetailLaterality}
+		)
+	</insert>
+	
+	<!-- 수술처방 인설트 -->
+	<insert id="insertOperation" parameterType="kr.or.ddit.cpr.vo.OperationVO">
+		INSERT INTO PREOPERATION (
+		    PREDETAIL_NO
+		    , OPERATION_NO
+		    , EMPLOYEE_NO
+		    , PREOPERATION_STATUS
+		) VALUES (
+		    #{predetailNo}
+		  , #{operationNo}
+		  , #{employeeNo}
+		  , #{preoperationStatus}
+		)
+	</insert>
+	
+	<!-- 외래환자 조회  -->
+	<select id="selectOutPatientList" parameterType="kr.or.ddit.cpr.vo.EmployeeVO" resultType="kr.or.ddit.cpr.vo.OutPatientListVO">
+		SELECT
+		    r.REGISTRATION_NO,
+		    r.PATIENT_NO,
+		    r.EMPLOYEE_NO,
+		    (SELECT EMPLOYEE_NAME FROM EMPLOYEE WHERE EMPLOYEE_NO = 26011906) AS EMPLOYEE_NAME, 
+		    p.PATIENT_NAME,
+		    p.PATIENT_GEN,
+		    p.PATIENT_REGNO1,
+		    p.PATIENT_REGNO2,
+		    r.RESERVATION_YN,
+    		r.RESERVATION_TIME,
+		    
+		    -- [1] 성별 변환 (CASE문 적용)
+		    CASE 
+		        WHEN p.PATIENT_GEN = 'MALE' THEN '남'
+		        WHEN p.PATIENT_GEN = 'FEMALE' THEN '여'
+		        ELSE '기타' 
+		    END AS PATIENT_GEN_KR,
+		    
+		    -- [2] 나이 계산 (만 나이 / 연 나이)
+			EXTRACT(YEAR FROM SYSDATE) - 
+			    TO_NUMBER(
+			        CASE SUBSTR(p.PATIENT_REGNO2, 1, 1)
+			            -- 1900년대생 (내국인:1,2 / 외국인:5,6)
+			            WHEN '1' THEN '19' 
+			            WHEN '2' THEN '19' 
+			            WHEN '5' THEN '19' 
+			            WHEN '6' THEN '19'
+			            -- 2000년대생 (내국인:3,4 / 외국인:7,8)
+			            WHEN '3' THEN '20' 
+			            WHEN '4' THEN '20' 
+			            WHEN '7' THEN '20' 
+			            WHEN '8' THEN '20'
+			            -- 1800년대생 (내국인:9,0) -> 100세 이상 어르신
+			            WHEN '9' THEN '18' 
+			            WHEN '0' THEN '18'
+			            -- 그 외는 기본 1900년대로 (데이터 오류 방지용)
+			            ELSE '19'
+			        END || SUBSTR(p.PATIENT_REGNO1, 1, 2)
+			    ) AS PATIENT_AGE,
+		    
+		    -- [1] 상태 (기존)
+		    cd_stat.COMMON_DETAIL_COMMENT   AS STATUS_NAME,     -- '진료중'
+		    r.REGISTRATION_STATUS,
+		    
+		    -- [2] 내원유형 (추가됨)
+		    cd_visit.COMMON_DETAIL_COMMENT  AS VISITTYPE_NAME, -- '초진', '재진' 등
+		    r.REGISTRATION_VISITTYPE,
+		
+		    -- [3] 보험유형 (추가됨)
+		    cd_ins.COMMON_DETAIL_COMMENT    AS INSURANCE_NAME, -- '건강보험', '일반' 등
+		    r.REGISTRATION_INSURANCE,
+		
+		    r.REGISTRATION_REGDATE
+		FROM
+		    REGISTRATION r
+		JOIN
+		    PATIENT p ON r.PATIENT_NO = p.PATIENT_NO
+		
+		-- [조인 1] 접수상태를 가져오기 위한 조인 (별칭: cd_stat)
+		LEFT JOIN 
+		    COMMON_DETAIL cd_stat 
+		    ON r.REGISTRATION_STATUS = cd_stat.COMMON_DETAIL_NAME
+		    AND cd_stat.COMMON_NO = 6  -- (예: 접수상태 그룹코드)
+		
+		-- [조인 2] 내원유형을 가져오기 위한 조인 (별칭: cd_visit)
+		LEFT JOIN 
+		    COMMON_DETAIL cd_visit 
+		    ON r.REGISTRATION_VISITTYPE = cd_visit.COMMON_DETAIL_NAME
+		    AND cd_visit.COMMON_NO = 3  -- [확인필요] 내원유형 그룹코드 (예: 7번이라고 가정)
+		
+		-- [조인 3] 보험유형을 가져오기 위한 조인 (별칭: cd_ins)
+		LEFT JOIN 
+		    COMMON_DETAIL cd_ins 
+		    ON r.REGISTRATION_INSURANCE = cd_ins.COMMON_DETAIL_NAME
+		    AND cd_ins.COMMON_NO = 4  -- [확인필요] 보험유형 그룹코드 (예: 8번이라고 가정)
+		
+		WHERE
+		     r.REGISTRATION_STATUS IN ('001','002','003')
+		     AND r.EMPLOYEE_NO = #{employeeNo}
+		     AND TO_CHAR(r.REGISTRATION_REGDATE, 'YYYYMMDD') = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		ORDER BY 1 asc
+	</select>
+	
+	
+	<!-- 환자 조회 관련 resultmap  -->
+	<resultMap id="patientCompositeMap" type="kr.or.ddit.cpr.vo.PatientCompositeVO">
+        
+        <id property="patientVO.patientNo" column="PATIENT_NO" />
+        
+        <association property="patientVO" javaType="kr.or.ddit.cpr.vo.PatientVO">
+            <id property="patientNo" column="PATIENT_NO" />
+            <result property="patientName" column="PATIENT_NAME" />
+            <result property="patientRegno1" column="PATIENT_REGNO1" />
+            <result property="patientRegno2" column="PATIENT_REGNO2" />
+            <result property="patientTel" column="PATIENT_TEL" />
+            <result property="patientGen" column="PATIENT_GEN" />
+            <result property="patientAddr1" column="PATIENT_ADDR1" />
+            <result property="patientAddr2" column="PATIENT_ADDR2" />
+            <result property="patientPostcode" column="PATIENT_POSTCODE" />
+            <result property="patientEmail" column="PATIENT_EMAIL" />
+            <result property="patientMemo" column="PATIENT_MEMO" />
+            <result property="patientAge" column="PATIENT_AGE" />
+        </association>
+
+        <association property="screeningVO" javaType="kr.or.ddit.cpr.vo.ScreeningVO">
+            <id property="screeningNo" column="SCREENING_NO" />
+            <result property="registrationNo" column="REGISTRATION_NO" /> 
+            <result property="screeningHeight" column="SCREENING_HEIGHT" />
+            <result property="screeningWeight" column="SCREENING_WEIGHT" />
+            <result property="screeningSystolic" column="SCREENING_SYSTOLIC" />
+            <result property="screeningDiastolic" column="SCREENING_DIASTOLIC" />
+            <result property="screeningTemperature" column="SCREENING_TEMPERATURE" />
+            <result property="screeningPulse" column="SCREENING_PULSE" />
+        </association>
+        
+    </resultMap>
+    
+    <resultMap type="kr.or.ddit.cpr.vo.ChartVO" id="chartMap">
+    	<id property="chartNo" column="CHART_NO"/>
+    	<result property="chartContent" column="CHART_CONTENT"/>
+    	<result property="chartRegdate" column="CHART_REGDATE"/>
+    	<result property="employeeNo" column="EMPLOYEE_NO"/>
+    </resultMap>
+    
+    
+    <!-- 환자 조회 관련 resultmap 끝  -->
+    
+    <!-- 환자 상세정보 ( 환자정보 바이탈 환자 차트내역 )  -->
+	<select id="selectPatientInfo" parameterType="kr.or.ddit.cpr.vo.PatientCompositeVO" resultMap="patientCompositeMap">
+		SELECT 
+	        P.PATIENT_NO, 
+	        P.PATIENT_NAME, 
+	        P.PATIENT_REGNO1, 
+	        P.PATIENT_REGNO2, 
+	        P.PATIENT_TEL, 
+	        P.PATIENT_ADDR1, 
+	        P.PATIENT_ADDR2, 
+	        P.PATIENT_GEN, 
+	        P.PATIENT_MEMO,
+	        
+	        S.SCREENING_NO, 
+	        S.SCREENING_HEIGHT, 
+	        S.SCREENING_WEIGHT, 
+	        S.SCREENING_SYSTOLIC, 
+	        S.SCREENING_DIASTOLIC, 
+	        S.SCREENING_TEMPERATURE, 
+	        S.SCREENING_PULSE
+	        
+	    FROM PATIENT P
+	    
+	    LEFT OUTER JOIN SCREENING S 
+	        ON P.PATIENT_NO = S.PATIENT_NO 
+	        AND S.REGISTRATION_NO = #{screeningVO.registrationNo} 
+	        
+	    WHERE P.PATIENT_NO = #{patientVO.patientNo}
+    </select>
+    
+    <!-- 주사정보 가져오기 -->
+    <select id="selectInjectList" resultType="kr.or.ddit.cpr.vo.DrugVO" parameterType="string">
+		SELECT * 
+		FROM		
+			(
+			SELECT
+				    DRUG_NO
+				  , DRUG_CODE
+				  , DRUG_NAME
+				  , DRUG_AMOUNT
+				  , DRUG_COMPANY
+				  , DRUG_COST
+				  , DRUG_PRICE
+				  , DRUG_SAFTY_STOKE
+				  , DRUG_TYPE
+				  , DRUG_SPEC
+				  , DRUG_UNIT
+			FROM    DRUG
+			WHERE 	1=1 
+		<if test="searchWord != null and searchWord != ''">
+			AND	  (DRUG_NAME LIKE '%' || #{searchWord} || '%' 
+			OR     DRUG_CODE LIKE '%' || #{searchWord} || '%')
+		</if>
+			AND DRUG_TYPE = '주사'
+			ORDER BY DRUG_NO ASC
+			)
+		<![CDATA[
+		WHERE ROWNUM <= 100
+		]]>
+    </select>
+	
+	<!-- 진단디테일 인설트 O -->
+	<insert id="insertDiagnosis" parameterType="kr.or.ddit.cpr.vo.DiagnosisVO">
+		INSERT INTO DIAGNOSIS_DETAIL (
+		    DIAGNOSIS_NO
+		    , CHART_NO
+		    , DIAGNOSIS_DETAIL_YN
+		) VALUES (
+		    #{diagnosisNo}
+		  , #{chartNo}
+		  , #{diagnosisDetailYN}
+		)
+	</insert>
+	
+	<!-- 진료 기록( 차트 콘텐츠 ) 업데이트 O -->
+	<update id="updateChartContent" parameterType="kr.or.ddit.cpr.vo.PredetailVO">
+		UPDATE CHART
+		SET
+			CHART_CONTENT = #{chartContent}
+		WHERE 
+			CHART_NO = ${chartNo}
+	</update>
+	
+	<!-- 환자 상태 업데이트 -->
+	<update id="updatePatientStatus" parameterType="kr.or.ddit.cpr.vo.RegistrationVO">
+		UPDATE REGISTRATION
+		SET
+			REGISTRATION_STATUS = #{registrationStatus}
+		WHERE 
+			REGISTRATION_NO = #{registrationNo}
+	</update>
+	
+	<!-- 수술목록  -->
+	<select id="selectOperationList" parameterType="string" resultType="kr.or.ddit.cpr.vo.OperationVO">
+		SELECT * 
+		FROM		
+			(
+			SELECT
+			    OPERATION_NO
+			  , OPERATION_CODE
+			  , OPERATION_NAME
+			  , OPERATION_PRICE
+			FROM    OPERATION
+			WHERE 	1=1 
+		<if test="searchWord != null and searchWord != ''">
+			AND	  (OPERATION_NAME LIKE '%' || #{searchWord} || '%' 
+			OR     OPERATION_CODE LIKE '%' || #{searchWord} || '%')
+		</if>
+			ORDER BY OPERATION_NO ASC
+			)
+		<![CDATA[
+		WHERE ROWNUM <= 100
+		]]>
+	</select>
+	
+	<!-- svg 정보 조회  -->
+	
+	<select id="selectAnatomy" resultType="kr.or.ddit.cpr.vo.AnatomyVO">
+		SELECT
+		    ANATOMY_NO
+		  , ANATOMY_NAME
+		  , ANATOMY_INDEX
+		  , ANATOMY_TYPE
+		  , ANATOMY_DIRECTION
+		FROM
+		    ANATOMY
+		ORDER BY 
+		    ANATOMY_INDEX ASC
+	</select>
+</mapper>

@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.consult.mapper.IConsultationMapper">
+
+	<resultMap id="chartMap" type="kr.or.ddit.cpr.vo.ConsultationVO">
+	    <id property="consultationNo" column="CONSULTATION_NO"/>
+	    <result property="chartNo" column="CHART_NO"/>
+	    <result property="latestPressure" column="LATEST_PRESSURE"/>
+	    <result property="latestTemperature" column="LATEST_TEMPERATURE"/>
+	
+	    <collection property="progressNotes" column="CHART_NO" select="selectProgressNote"/>
+	    <collection property="diagnosis" column="CHART_NO" select="selectDiagnosis"/>
+	    <collection property="nursingCharts" column="CHART_NO" select="selectNursing"/>
+	    <collection property="diet" column="CHART_NO" select="selectDiet"/>
+	    <collection property="operation" column="CHART_NO" select="selectOperation"/>
+	    <collection property="drug" column="CHART_NO" select="selectDrug"/>
+	    <collection property="treatment" column="CHART_NO" select="selectTreatment"/>
+	    <collection property="examination" column="CHART_NO" select="selectExamination"/>
+	</resultMap>
+
+	<select id="selectReqConsultPatient" resultType="kr.or.ddit.cpr.vo.ConsultationVO">
+		SELECT
+			p.patient_no
+		  , p.patient_name
+		  , p.patient_gen
+		  , (EXTRACT(YEAR FROM sysdate) - (
+		        CASE
+		            WHEN substr(p.patient_regno2, 1, 1) IN ( '1', '2' ) THEN
+		                1900
+		            ELSE
+		                2000
+		        END
+		        + TO_NUMBER(substr(p.patient_regno1, 1, 2)) ) + 1 ) AS patient_age
+		        
+		  , c.consultation_no
+		  , c.chart_no
+		  , c.consultation_reqdoctor  AS consultationReqdoctor
+    	  , c.consultation_respdoctor AS consultationRespdoctor
+		  , to_char(consultation_reqdate, 'YYYY-MM-DD HH24:MI:SS') AS consultation_reqdate
+		  , to_char(consultation_respdate, 'YYYY-MM-DD HH24:MI:SS') AS consultation_respdate
+		  , LPAD(c.consultation_status, 3, '0') AS consultation_status
+		  , c.consultation_reqcontent
+		  , c.consultation_respcontent
+		  , c.consultation_reason
+		  
+		  , e1.employee_name AS reqDoctorName
+	      , e2.employee_name AS respDoctorName
+		FROM
+			consultation c
+			LEFT JOIN chart ch	 ON c.chart_no = ch.chart_no
+			LEFT JOIN admission a ON ch.admission_no = a.admission_no
+			LEFT JOIN patient p	 ON a.patient_no = p.patient_no
+			LEFT JOIN employee e1 ON c.consultation_reqdoctor = e1.employee_no
+			LEFT JOIN employee e2 ON c.consultation_respdoctor = e2.employee_no
+	    <where>
+	        <if test="patientNo != null">
+           		AND p.patient_no = #{patientNo}
+	        </if>
+	        <if test="employeeNo != null">
+	            AND (c.consultation_reqdoctor = #{employeeNo} OR c.consultation_respdoctor = #{employeeNo})
+	        </if>
+	    </where>
+	    ORDER BY c.consultation_reqdate DESC
+	</select>
+
+	<select id="selectConsultationDetail" resultType="kr.or.ddit.cpr.vo.ConsultationVO">
+		SELECT
+			c.consultation_no
+		  , c.chart_no
+		  , c.consultation_reqdoctor  AS consultationReqdoctor
+    	  , c.consultation_respdoctor AS consultationRespdoctor
+		  , to_char(consultation_reqdate, 'YYYY-MM-DD HH24:MI:SS') AS consultation_reqdate
+		  , to_char(consultation_respdate, 'YYYY-MM-DD HH24:MI:SS') AS consultation_respdate
+		  , LPAD(c.consultation_status, 3, '0') AS consultation_status
+		  , c.consultation_reqcontent
+		  , c.consultation_respcontent
+		  , c.consultation_reason
+		  
+		  , p.patient_no
+		  , p.patient_name
+		  , p.patient_gen
+		  , (EXTRACT(YEAR FROM sysdate) - (
+		        CASE
+		            WHEN substr(p.patient_regno2, 1, 1) IN ( '1', '2' ) THEN
+		                1900
+		            ELSE
+		                2000
+		        END
+		        + TO_NUMBER(substr(p.patient_regno1, 1, 2)) ) + 1 ) AS patient_age
+		  
+		  , e1.employee_name AS reqDoctorName
+	      , e2.employee_name AS respDoctorName
+	    FROM
+	    	consultation c
+			LEFT JOIN chart ch	 ON c.chart_no = ch.chart_no
+			LEFT JOIN admission a ON ch.admission_no = a.admission_no
+			LEFT JOIN patient p	 ON a.patient_no = p.patient_no
+			LEFT JOIN employee e1 ON c.consultation_reqdoctor = e1.employee_no
+			LEFT JOIN employee e2 ON c.consultation_respdoctor = e2.employee_no
+		WHERE
+			c.consultation_no = #{consultationNo}
+	</select>
+	
+	<select id="searchPatient" parameterType="kr.or.ddit.cpr.vo.ConsultationVO">
+		SELECT 
+	        p.patient_no       AS patientNo
+	      , p.patient_name     AS patientName
+	      , p.patient_gen      AS patientGen
+	      , (EXTRACT(YEAR FROM sysdate) - (
+	            CASE WHEN substr(p.patient_regno2, 1, 1) IN ('1', '2') THEN 1900 ELSE 2000 END
+	            + TO_NUMBER(substr(p.patient_regno1, 1, 2))) + 1) AS patientAge
+	      , a.admission_no     AS admissionNo
+	      , c.chart_no         AS chartNo
+	      , e.employee_name    AS employeeName 
+	    FROM patient p
+	    INNER JOIN admission a ON p.patient_no = a.patient_no
+	    INNER JOIN chart c     ON a.admission_no = c.admission_no
+	    INNER JOIN employee e  ON a.employee_no = e.employee_no
+	    WHERE a.admission_status = '001' 
+	    <if test="keyword != null and keyword != ''">
+	      AND (p.patient_name LIKE '%' || #{keyword} || '%' OR p.patient_no LIKE '%' || #{keyword} || '%')
+	    </if>
+	    ORDER BY p.patient_name ASC
+	</select>
+	
+	<select id="selectDoctorList" parameterType="kr.or.ddit.cpr.vo.EmployeeVO">
+		SELECT 
+	        employee_no   AS employeeNo
+	      , employee_name AS employeeName
+	    FROM employee
+	    WHERE employee_code = '1'
+	      AND enabled = '1'      
+	    ORDER BY employee_name ASC
+	</select>
+	
+	<select id="selectChartDetail" resultMap="chartMap">
+	    SELECT 
+	        C.CHART_NO
+	      , P.PATIENT_NAME
+	      , P.PATIENT_GEN
+	      , P.PATIENT_NO
+	      , (EXTRACT(YEAR FROM SYSDATE) - (
+	            CASE WHEN SUBSTR(P.PATIENT_REGNO2, 1, 1) IN ('1', '2') THEN 1900 ELSE 2000 END
+	            + TO_NUMBER(SUBSTR(P.PATIENT_REGNO1, 1, 2))) + 1) AS PATIENT_AGE
+	      , (SELECT 
+	      		NC_SUB.NURSINGCHART_PRESSURE 
+	      	 FROM 
+	      	 	(SELECT 
+	      	 		NURSINGCHART_PRESSURE 
+	      	 	 FROM 
+	      	 	 	NURSINGCHART 
+	      	 	 WHERE CHART_NO = C.CHART_NO 
+	      	 	 ORDER BY NURSINGCHART_DATE DESC) NC_SUB 
+	      	 WHERE ROWNUM = 1) AS LATEST_PRESSURE
+	      , (SELECT
+	      		 NC_SUB.NURSINGCHART_TEMPERATURE 
+	      	 FROM 
+	      	 	(SELECT
+	      	 		NURSINGCHART_TEMPERATURE 
+	      	 	 FROM 
+	      	 	 	NURSINGCHART 
+	      	 	 WHERE CHART_NO = C.CHART_NO 
+	      	 	 ORDER BY NURSINGCHART_DATE DESC) NC_SUB 
+	      	 WHERE ROWNUM = 1) AS LATEST_TEMPERATURE
+	    FROM CHART C
+	    INNER JOIN PATIENT P ON C.PATIENT_NO = P.PATIENT_NO
+	    WHERE C.CHART_NO = #{chartNo}
+	</select>
+	
+	<select id="selectProgressNote" resultType="kr.or.ddit.cpr.vo.ProgressNoteVO">
+	    SELECT 
+	        PROGRESSNOTE_NO
+	      , PROGRESSNOTE_CONTENT
+	      , TO_CHAR(PROGRESSNOTE_DATE, 'YYYY-MM-DD HH24:MI') AS PROGRESSNOTE_DATE
+	    FROM PROGRESSNOTE 
+	    WHERE CHART_NO = #{chartNo} 
+	    ORDER BY PROGRESSNOTE_DATE DESC
+	</select>
+	
+	<select id="selectNursing" resultType="kr.or.ddit.cpr.vo.NursingChartVO">
+	    SELECT 
+	        nc.NURSINGCHART_NO
+	      , nc.NURSINGCHART_CONTENT
+	      , nc.NURSINGCHART_DATE 
+	      , nc.NURSINGCHART_PRESSURE
+	      , nc.NURSINGCHART_TEMPERATURE
+	      , e.EMPLOYEE_NAME
+	    FROM
+		    NURSINGCHART nc
+		    LEFT JOIN EMPLOYEE     e ON nc.EMPLOYEE_NO = e.EMPLOYEE_NO
+		WHERE CHART_NO = #{chartNo} 
+	    ORDER BY nc.NURSINGCHART_DATE DESC
+	</select>
+	
+	<select id="selectDiagnosis" resultType="kr.or.ddit.cpr.vo.DiagnosisVO">
+	    SELECT
+	    	d.diagnosis_no
+	      , d.diagnosis_code
+	      , d.diagnosis_name
+	      , dd.diagnosis_detail_yn
+	    FROM DIAGNOSIS_DETAIL DD 
+	    	JOIN DIAGNOSIS D ON DD.DIAGNOSIS_NO = D.DIAGNOSIS_NO 
+	    WHERE DD.CHART_NO = #{chartNo}
+	</select>
+	
+	<select id="selectDrug" resultType="kr.or.ddit.cpr.vo.DrugVO">
+	    SELECT 
+	    	TO_CHAR(PD.PREDETAIL_REGDATE, 'YYYY-MM-DD') AS PREDETAIL_REGDATE
+	      , DR.DRUG_NAME
+	      , DR.DRUG_CODE
+	      , DR.DRUG_UNIT
+	      , PDD.PREDRUG_DETAIL_DOSE
+	      , PDD.PREDRUG_DETAIL_FREQ
+	      , PDD.PREDRUG_DETAIL_DAY
+	      , PDD.PREDRUG_DETAIL_METHOD
+	      , PDD.PREDRUG_DETAIL_STATUS
+	    FROM PREDETAIL PD 
+	    JOIN PREDRUG_DETAIL PDD ON PD.PREDETAIL_NO = PDD.PREDETAIL_NO 
+	    JOIN DRUG DR ON PDD.DRUG_NO = DR.DRUG_NO 
+	    WHERE PD.CHART_NO = #{chartNo}
+	    ORDER BY PD.PREDETAIL_REGDATE DESC
+	</select>
+	
+	<select id="selectTreatment" resultType="kr.or.ddit.cpr.vo.TreatmentVO">
+	    SELECT 
+	    	TO_CHAR(PD.PREDETAIL_REGDATE, 'YYYY-MM-DD') AS PREDETAIL_REGDATE
+	      , TR.TREATMENT_NAME
+	      , TR.TREATMENT_CODE
+	      , PTD.PRETREATMENT_DETAIL_DOSE
+	      , PTD.PRETREATMENT_DETAIL_FREQ
+	      , PTD.PRETREATMENT_DETAIL_STATUS
+	      , PTD.PRETREATMENT_DETAIL_REMARK
+	    FROM PREDETAIL PD 
+	    JOIN PRETREATMENT_DETAIL PTD ON PD.PREDETAIL_NO = PTD.PREDETAIL_NO 
+	    JOIN TREATMENT TR ON PTD.TREATMENT_NO = TR.TREATMENT_NO 
+	    WHERE PD.CHART_NO = #{chartNo}
+	</select>
+	
+	<select id="selectExamination" resultType="kr.or.ddit.cpr.vo.ExaminationVO">
+	    SELECT 
+		    TO_CHAR(PD.PREDETAIL_REGDATE, 'YYYY-MM-DD') AS PREDETAIL_REGDATE
+		  , EX.EXAMINATION_NAME
+	      , EX.EXAMINATION_CODE
+	      , PED.PREEXAMINATION_DETAIL_SITE
+	      , PED.PREEXAMINATION_DETAIL_STATUS
+	      , PED.PREEXAMINATION_DETAIL_REMARK
+	      , ad.attachment_detail_path
+          , ad.attachment_detail_name    
+          , ad.attachment_detail_no  
+	    FROM PREDETAIL PD 
+	    JOIN PREEXAMINATION_DETAIL PED ON PD.PREDETAIL_NO = PED.PREDETAIL_NO 
+	    JOIN EXAMINATION EX ON PED.EXAMINATION_NO = EX.EXAMINATION_NO 
+	    LEFT JOIN ATTACHMENT_DETAIL AD ON PED.ATTACHMENT_NO = AD.ATTACHMENT_NO
+	    WHERE PD.CHART_NO = #{chartNo}
+	</select>
+	
+	<select id="selectDiet" resultType="kr.or.ddit.cpr.vo.DietVO">
+	    SELECT
+	    	TO_CHAR(PD.PREDETAIL_REGDATE, 'YYYY-MM-DD') AS PREDETAIL_REGDATE
+		  , DT.DIET_NAME
+	      , DT.DIET_CODE
+	      , PDI.PREDIET_DOSE
+	      , PDI.PREDIET_FREQ
+	      , PDI.PREDIET_STATUS
+	    FROM PREDETAIL PD 
+	    JOIN PREDIET PDI ON PD.PREDETAIL_NO = PDI.PREDETAIL_NO 
+	    JOIN DIET DT ON PDI.DIET_NO = DT.DIET_NO 
+	    WHERE PD.CHART_NO = #{chartNo}
+	</select>
+	
+	<select id="selectOperation" resultType="kr.or.ddit.cpr.vo.OperationVO">
+	    SELECT 
+	    	TO_CHAR(PD.PREDETAIL_REGDATE, 'YYYY-MM-DD') AS PREDETAIL_REGDATE
+		  , OP.OPERATION_NAME
+	      , OP.OPERATION_CODE
+	      , POP.PREOPERATION_REGDATE
+	    FROM PREDETAIL PD 
+	    JOIN PREOPERATION POP ON PD.PREDETAIL_NO = POP.PREDETAIL_NO 
+	    JOIN OPERATION OP ON POP.OPERATION_NO = OP.OPERATION_NO 
+	    WHERE PD.CHART_NO = #{chartNo}
+	</select>
+	
+	<insert id="insertReqConsultation" parameterType="kr.or.ddit.cpr.vo.ConsultationVO">
+		INSERT INTO consultation (
+	        consultation_no
+	      , chart_no
+	      , consultation_reqdoctor
+	      , consultation_respdoctor
+	      , consultation_reqcontent
+	      , consultation_reqdate
+	      , consultation_status
+	    ) VALUES (
+	        seq_consultation.nextval
+	      , #{chartNo}
+	      , #{consultationReqdoctor}
+	      , #{consultationRespdoctor}
+	      , #{consultationReqcontent}
+	      , SYSDATE
+	      , '003'
+   		)
+	</insert>
+	
+	<update id="updateRespConsultation" parameterType="kr.or.ddit.cpr.vo.ConsultationVO">
+		UPDATE
+			consultation
+		SET
+		    consultation_respdate = SYSDATE
+		  , consultation_status = #{consultationStatus}
+		  <if test="consultationRespcontent != null">
+		  ,	consultation_respcontent = #{consultationRespcontent}
+		  </if>
+		  <if test="consultationReason != null">
+		  , consultation_reason = #{consultationReason}
+		  </if>
+		WHERE
+			consultation_no = #{consultationNo}
+	</update>
+	
+
+</mapper>
+
+
+
+
+
+
+
+
+

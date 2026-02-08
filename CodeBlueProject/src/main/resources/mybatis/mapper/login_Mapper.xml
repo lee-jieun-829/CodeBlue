@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.login.mapper.ILoginMapper">
+
+	<resultMap type="kr.or.ddit.cpr.vo.EmployeeVO" id="employeeMap">
+			<id property="employeeNo" column="EMPLOYEE_NO"/>
+			<result property="employeeName" column="EMPLOYEE_NAME"/>
+			<result property="employeePassword" column="EMPLOYEE_PASSWORD"/>
+			<result property="employeeGen" column="EMPLOYEE_GEN"/>
+			<result property="employeeRegno1" column="EMPLOYEE_REGNO1"/>
+			<result property="employeeRegno2" column="EMPLOYEE_REGNO2"/>
+			<result property="employeeTel" column="EMPLOYEE_TEL"/>
+			<result property="employeeRegdate" column="EMPLOYEE_REGDATE"/>
+			<result property="employeeRetdate" column="EMPLOYEE_RETDATE"/>
+			<result property="employeeStatus" column="EMPLOYEE_STATUS"/>
+			<result property="employeeBirth" column="EMPLOYEE_BIRTH"/>
+			<result property="employeeCode" column="EMPLOYEE_CODE"/>
+			<result property="employeeEmail" column="EMPLOYEE_EMAIL"/>
+			<result property="fileNo" column="FILE_NO"/>
+			<result property="enabled" column="ENABLED"/>
+			<result property="hospitalNo" column="HOSPITAL_NO"/>
+			<result property="employeeDetailLicence" column="EMPLOYEE_DETAIL_LICENCE"/>
+			<result property="pwTempYn" column="PW_TEMP_YN"/>
+			<collection property="authList" resultMap="authMap"/>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.cpr.vo.EmployeeAuthVO" id="authMap">
+		<result property="employeeNo" column="EMPLOYEE_NO"/>
+		<result property="auth" column="AUTH"/>
+	</resultMap>
+
+	<!-- 로그인 -->	
+	<select id="login" parameterType="int" resultMap="employeeMap">
+		select e.*, a.auth
+		  from employee e left outer join employee_auth a on (e.employee_no = a.employee_no)
+		 where e.employee_no = #{employeeNo}
+	</select>
+	
+	<!-- 비번 변경 :: 현재 비번 체크 api -->
+	<select id="checkPassword" parameterType="int" resultMap="employeeMap">
+        SELECT *
+          FROM EMPLOYEE
+         WHERE EMPLOYEE_NO = #{employeeNo}
+    </select>
+    
+	<!-- 비번 찾기 :: 임시 비밀번호 발급 조건 -->
+    <select id="checkUserForReset" parameterType="kr.or.ddit.cpr.vo.EmployeeVO" resultType="int">
+		SELECT COUNT(*)
+		  FROM EMPLOYEE
+		 WHERE EMPLOYEE_NO = #{employeeNo}
+		   AND EMPLOYEE_EMAIL = #{employeeEmail}
+	</select>
+
+	<!-- 비번 변경 :: 새로운 비번 업데이트 -->
+    <update id="updatePassword" parameterType="kr.or.ddit.cpr.vo.EmployeeVO">
+        UPDATE EMPLOYEE
+           SET EMPLOYEE_PASSWORD = #{employeePassword},
+           	   PW_TEMP_YN = #{pwTempYn}
+         WHERE EMPLOYEE_NO = #{employeeNo}
+    </update>
+
+</mapper>

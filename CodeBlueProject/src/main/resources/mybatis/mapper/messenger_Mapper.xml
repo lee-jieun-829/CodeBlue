@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cpr.messenger.mapper.IMessengerMapper">
+	
+	<!-- 메시지 저장 -->
+	<insert id="insertMessage" parameterType="kr.or.ddit.cpr.vo.ChattingDetailVO">
+		<selectKey keyProperty="chattingDetailNo" resultType="long" order="BEFORE">
+            SELECT SEQ_CHATTING_DETAIL.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO CHATTING_DETAIL (
+            CHATTING_DETAIL_NO,
+            CHATTING_DETAIL_CONTENT,
+            CHATTING_DETAIL_SENDER,
+            CHATTING_DETAIL_SEND_AT,
+            CHATTINGROOM_NO
+        ) VALUES (
+            #{chattingDetailNo},
+            #{chattingDetailContent},
+            #{chattingDetailSender},
+            #{chattingDetailSendAt},
+            #{chattingroomNo}
+        )
+	</insert>
+	
+	<!-- 읽음 처리 -->
+	<update id="updateReadStatus" parameterType="kr.or.ddit.cpr.vo.ChattingPeopleVO">
+		UPDATE CHATTING_PEOPLE
+        SET CHATTING_PEOPLE_READ = #{chattingPeopleRead}
+        WHERE CHATTINGROOM_NO = #{chattingroomNo}
+          AND CHATTING_PEOPLE_ID = #{chattingPeopleId}
+          AND (
+          	CHATTING_PEOPLE_READ IS NULL 
+          	OR
+	        <![CDATA[ 
+	          CHATTING_PEOPLE_READ < #{chattingPeopleRead}
+	        ]]>
+          )
+	</update>
+	
+	<!-- 메시지 조회 -->
+	<select id="getMessageListWithUnreadCount" resultType="kr.or.ddit.cpr.vo.ChattingDetailVO">
+		select
+		    a.chattingroom_no
+		  , a.chatting_detail_sender
+		  , b.employee_name as sender_name
+		  , a.chatting_detail_no
+		  , a.chatting_detail_content
+		  , a.chatting_detail_send_at
+		  , (
+		    select
+		        count(*)
+		    from chatting_people cp
+		    where cp.chattingroom_no = a.chattingroom_no
+		    and (cp.chatting_people_read is null
+		    <![CDATA[ 
+		        or cp.chatting_people_read < a.chatting_detail_no)
+		    ]]>
+		  ) as unread_count
+		from chatting_detail a
+		left outer join employee b on (a.chatting_detail_sender = b.employee_no)
+		where a.chattingroom_no = #{roomNo}
+		order by a.chatting_detail_send_at asc
+	</select>
+	
+	<!--  채팅방의 마지막 메시지 번호 조회 -->
+	<!-- <select id="selectLastMessage" parameterType="long">
+		select nvl(max(chatting_detail_no), 0)
+		from chatting_detail
+		where chattingroom_no = #{roomNo}
+	</select> -->
+	
+	<delete id="deleteChattingPeople">
+	    DELETE FROM CHATTING_PEOPLE
+	    WHERE CHATTINGROOM_NO = #{roomNo}
+	      AND CHATTING_PEOPLE_ID = #{userId}
+	</delete>
+	
+	<select id="getEmployeeList" resultType="kr.or.ddit.cpr.vo.EmployeeVO" >
+		select 
+		    a.employee_no
+		  , a.employee_name
+		  , b.common_no
+		  , b.common_detail_name
+		  , b.common_detail_comment as employee_code
+		from employee a
+		left outer join common_detail b on a.employee_code = b.common_detail_name
+		where b.common_no = '1'
+		order by a.employee_name asc
+	</select>
+	
+	<insert id="insertChatRoom" parameterType="kr.or.ddit.cpr.vo.ChattingRoomVO">
+	    <selectKey keyProperty="chattingroomNo" resultType="long" order="BEFORE">
+	        SELECT SEQ_CHATTINGROOM.NEXTVAL FROM DUAL
+	    </selectKey>
+	    INSERT INTO CHATTINGROOM (
+	        CHATTINGROOM_NO
+	    ) VALUES (
+	        #{chattingroomNo}
+	    )
+	</insert>
+	
+	<insert id="insertChatPeople" parameterType="kr.or.ddit.cpr.vo.ChattingPeopleVO">
+	    INSERT INTO CHATTING_PEOPLE (
+	        CHATTINGROOM_NO,
+	        CHATTING_PEOPLE_ID,
+	        CHATTING_PEOPLE_FAVORITE,
+	        CHATTING_PEOPLE_READ
+	    ) VALUES (
+	        #{chattingroomNo},
+	        #{chattingPeopleId},
+	        'N',
+	        0
+	    )
+	</insert>
+	
+	<select id="selectMyChatRoomList" parameterType="string" resultType="kr.or.ddit.cpr.vo.ChattingRoomVO">
+	    SELECT 
+	        R.CHATTINGROOM_NO,
+	        
+	        -- 1. 채팅방 이름 생성 (나를 제외한 참여자 이름들을 쉼표로 연결)
+	        (SELECT LISTAGG(E.EMPLOYEE_NAME, ', ') WITHIN GROUP (ORDER BY E.EMPLOYEE_NAME)
+	           FROM CHATTING_PEOPLE CP
+	           JOIN EMPLOYEE E ON CP.CHATTING_PEOPLE_ID = TO_CHAR(E.EMPLOYEE_NO) 
+	          WHERE CP.CHATTINGROOM_NO = R.CHATTINGROOM_NO
+	            AND CP.CHATTING_PEOPLE_ID != #{employeeNo}) AS ROOM_NAME,
+	            
+	        -- 2. 마지막 메시지 내용
+	        (SELECT CHATTING_DETAIL_CONTENT 
+	           FROM (SELECT CHATTING_DETAIL_CONTENT, CHATTINGROOM_NO 
+	                   FROM CHATTING_DETAIL 
+	                  ORDER BY CHATTING_DETAIL_NO DESC) M 
+	          WHERE M.CHATTINGROOM_NO = R.CHATTINGROOM_NO 
+	            AND ROWNUM = 1) AS LAST_MESSAGE,
+	            
+	        -- 3. 마지막 전송 시간 (정렬 기준)
+	        (SELECT CHATTING_DETAIL_SEND_AT 
+	           FROM (SELECT CHATTING_DETAIL_SEND_AT, CHATTINGROOM_NO 
+	                   FROM CHATTING_DETAIL 
+	                  ORDER BY CHATTING_DETAIL_NO DESC) M 
+	          WHERE M.CHATTINGROOM_NO = R.CHATTINGROOM_NO 
+	            AND ROWNUM = 1) AS LAST_SEND_AT,
+	            
+	        -- 4. 안 읽은 메시지 개수 (내 읽음 번호보다 큰 메시지 카운트)
+	        (SELECT COUNT(*) 
+	           FROM CHATTING_DETAIL D
+	          WHERE D.CHATTINGROOM_NO = R.CHATTINGROOM_NO
+	          <![CDATA[ 
+	            AND D.CHATTING_DETAIL_NO > P.CHATTING_PEOPLE_READ) AS UNREAD_COUNT
+	          ]]>
+	            
+	    FROM CHATTINGROOM R
+	    JOIN CHATTING_PEOPLE P ON R.CHATTINGROOM_NO = P.CHATTINGROOM_NO
+	   WHERE P.CHATTING_PEOPLE_ID = #{empNo}
+	   ORDER BY LAST_SEND_AT DESC NULLS LAST
+	</select>
+</mapper>
